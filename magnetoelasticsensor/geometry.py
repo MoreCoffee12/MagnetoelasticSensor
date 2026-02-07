@@ -70,7 +70,7 @@ class SensorGeometry:
     # Core magnetic properties (not geometric but included for completeness)
     muo: DimensionalParameter  # Permeability of free space [H/m]
     mur: DimensionalParameter  # Relative permeability of core material (dimensionless)
-    rho: DimensionalParameter  # Electrical resistivity of core material [Ω·cm]
+    rho: DimensionalParameter  # Electrical resistivity of core material [Ω·m]
     
     # Target magnetic and electrical properties
     murt: DimensionalParameter  # Relative permeability of target material (dimensionless)
@@ -155,8 +155,8 @@ DEFAULT_SENSOR_GEOMETRY = SensorGeometry(
     # Material Data Sheet, Fair-rite, 26 Apr. 2023, 
     # fair-rite.com/97-material-data-sheet/.
     rho=DimensionalParameter(
-        nominal=200.0,  # Electrical resistivity of ferrite [Ω·cm], estimated
-        tolerance=2.0  # Estimated, used in dissertation
+        nominal=2.0,  # Electrical resistivity of ferrite [Ω·m], estimated
+        tolerance=0.02  # Estimated, used in dissertation
     ),
 
     # Permeability of target material (ferromagnetic)  

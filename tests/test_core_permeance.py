@@ -138,9 +138,9 @@ class TestCorePermeanceModel:
         model = CorePermeanceModel()
         permeance = model.calculate_core_permeance()
         
-        # Permeance should be positive and in reasonable range
-        assert permeance > 0
-        assert 1e-9 < permeance < 1e-4  # Typical core inductance range
+        # This is from the section "Combined permeances" in the "UncertaintyChain.nb" notebook
+        d_permeance_expected = 1.261860054772294e-6
+        assert math.isclose(d_permeance_expected, permeance, rel_tol=1e-8)
 
     def test_core_permeance_returns_float(self):
         """Test that core permeance returns a float."""

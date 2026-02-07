@@ -67,7 +67,7 @@ class CorePermeanceModel:
         mur : float, optional
             Core relative permeability override. If None, uses geometry.mur.
         rho : float, optional
-            Electrical resistivity override. If None, uses geometry.rho.
+            Core electrical resistivity override. If None, uses geometry.rho.
         omega : float, optional
             Angular frequency override. If None, uses geometry.omega.
 
@@ -78,12 +78,12 @@ class CorePermeanceModel:
         """
         # Extract geometry (nominal values)
         dp = self.geometry.dim_dp.nominal
-        sph_drive = self.geometry.dim_sph_drive.nominal
+        dimsphi = self.geometry.dim_sph_drive.nominal
         sp = self.geometry.dim_sp.nominal
-        sph_sense = self.geometry.dim_sph_sense.nominal
-        spaw = self.geometry.dim_spaw.nominal
-        spah = self.geometry.dim_spah.nominal
-        spac = self.geometry.dim_spac.nominal
+        dimsphi = self.geometry.dim_sph_sense.nominal
+        dimspawi = self.geometry.dim_spaw.nominal
+        dimspahi = self.geometry.dim_spah.nominal
+        dimspaci = self.geometry.dim_spac.nominal
         spag = self.geometry.dim_spag.nominal
 
         muo = self.geometry.muo.nominal if muo is None else muo
@@ -92,17 +92,31 @@ class CorePermeanceModel:
         rho = self.geometry.rho.nominal if rho is None else rho
         omega = self.geometry.omega.nominal if omega is None else omega
 
-        # TODO: incorporate stress -> permeability transformation (inverse magnetostriction)
-        _ = stress  # placeholder to accept discrete stress input
-
         # Implement core permeance calculation, starting with branch
         # permeance as a function of geometry and material properties
-        Pbr = (spah * spaw * muo * mur) / spac
-        Pbreddy = (16 * math.pi * rho) / (spac * omega)
+
+        # Branch permeance (magnetic path through core)
+        Pbr = (dimspahi * dimspawi * muo * mur) / dimspaci
+        assert Pbr > 0, "Branch permeance must be greater than zero."
+        Pbreddy = (16 * math.pi * rho) / (dimspaci * omega)
+        assert Pbreddy > 0, "Branch eddy current permeance must be greater than zero."
+
+        #sense pole permeance (magnetic path through sense pole)
+        Ps = ((sp**2)*muo*mur*math.pi)/(4.*dimsphi)
+        assert Ps > 0, "Sense pole permeance must be greater than zero."
+        Pseddy = (16*math.pi*rho)/(dimsphi*omega)
+        assert Pseddy > 0, "Sense pole eddy current permeance must be greater than zero."
+
+        # Drive pole permeance (magnetic path through drive pole)
+        Pd = ((dp**2)*muo*mur*math.pi)/(4.*dimsphi)
+        assert Pd > 0, "Drive pole permeance must be greater than zero."
+        Pdeddy = (16*math.pi*rho)/(dimsphi*omega)
+        assert Pdeddy > 0, "Drive pole eddy current permeance must be greater than zero."
 
         # Sum the series permeance to estimate the core total permeance
         # (does not include target permeability or stress effects yet)
-        permeance = 1.0 / (1 / Pbr + 1 / Pbreddy)
+        permeance = 1.0 / (1 / Pbr + 1 / Pbreddy + 1 / Ps + 1 / Pseddy
+                            + 1 / Pd + 1 / Pdeddy)   
 
         return permeance
 
