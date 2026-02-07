@@ -3,8 +3,12 @@ Sensor geometry and dimensional parameters for magnetoelastic sensor modeling.
 
 All dimensions stored in SI units (meters) with nominal values and tolerances.
 Reference architecture: Single-branch magnetoelastic sensor with ferrite core.
+
+B. Howard
+7 Feb 2026.
 """
 
+import math
 from dataclasses import dataclass
 
 
@@ -62,9 +66,20 @@ class SensorGeometry:
     dim_spaw: DimensionalParameter  # Bridge width
     dim_spah: DimensionalParameter  # Bridge height
     dim_spac: DimensionalParameter  # Bridge length (distance between pole centers)
+
+    # Core magnetic properties (not geometric but included for completeness)
+    muo: DimensionalParameter  # Permeability of free space [H/m]
+    mur: DimensionalParameter  # Relative permeability of core material (dimensionless)
+    rho: DimensionalParameter  # Electrical resistivity of core material [Ω·cm]
+    
+    # Target magnetic and electrical properties
+    murt: DimensionalParameter  # Relative permeability of target material (dimensionless)
     
     # Gap/spacing
     dim_spag: DimensionalParameter  # Distance between poles (air gap)
+
+    # Operating frequency (for eddy current calculations)
+    omega: DimensionalParameter  # Angular frequency [rad/s]
     
     def __repr__(self) -> str:
         return (
@@ -119,4 +134,44 @@ DEFAULT_SENSOR_GEOMETRY = SensorGeometry(
         nominal=9.00e-3,
         tolerance=0.10e-3
     ),
+
+    # Permeability of free space
+    muo=DimensionalParameter(
+        nominal=4 * math.pi * 1e-7,
+        tolerance=0.0  # Physical constant, no tolerance
+    ),
+
+    #Permeability of core material (ferrite) - nominal value from datasheet, tolerance estimated
+    # “97 Material Data Sheet - Fair-Rite.” Fair-Rite 97 
+    # Material Data Sheet, Fair-rite, 26 Apr. 2023, 
+    # fair-rite.com/97-material-data-sheet/.
+    mur=DimensionalParameter(
+        nominal=2000.0,  # Room temp, @ B < 10 gauss
+        tolerance=20.0  # Estimated
+    ),
+
+    # Electrical resistivity of core material (ferrite) - nominal value from datasheet, tolerance estimated
+        # “97 Material Data Sheet - Fair-Rite.” Fair-Rite 97 
+    # Material Data Sheet, Fair-rite, 26 Apr. 2023, 
+    # fair-rite.com/97-material-data-sheet/.
+    rho=DimensionalParameter(
+        nominal=200.0,  # Electrical resistivity of ferrite [Ω·cm], estimated
+        tolerance=2.0  # Estimated, used in dissertation
+    ),
+
+    # Permeability of target material (ferromagnetic)  
+    # Jiles, David. Introduction to Magnetism and Magnetic 
+    # Materials. 3rd ed., Springer Boston, MA, 2016.
+    murt=DimensionalParameter(
+        nominal=1000.0,  # Room temp, zero stress
+        tolerance= 10.0 # Estimated, actual value will depend on target material and stress state  
+    ),
+
+    # Operating frequency (for eddy current calculations)
+    # Matches assumptions in dissertation. 
+    omega=DimensionalParameter(
+        nominal=2 * math.pi * 50000.0,  # 50 kHz operating frequency
+        tolerance=0.0  # No tolerance, user-defined parameter
+    ),
+
 )

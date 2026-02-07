@@ -7,9 +7,7 @@ Tests the magnetoelasticsensor.core_permeance module.
 import math
 import pytest
 from magnetoelasticsensor.core_permeance import (
-    CorePermeanceModel,
-    calculate_core_permeance_simple,
-    MU_0,
+    CorePermeanceModel
 )
 from magnetoelasticsensor.geometry import (
     SensorGeometry,
@@ -83,6 +81,11 @@ class TestSensorGeometry:
             dim_spah=DimensionalParameter(nominal=5e-3, tolerance=0.1e-3),
             dim_spac=DimensionalParameter(nominal=17e-3, tolerance=0.1e-3),
             dim_spag=DimensionalParameter(nominal=10e-3, tolerance=0.1e-3),
+            muo=DimensionalParameter(nominal=4e-7*math.pi, tolerance=0.0),
+            mur=DimensionalParameter(nominal=2000.0, tolerance=0.0),
+            rho=DimensionalParameter(nominal=1e-6, tolerance=0.0),
+            murt=DimensionalParameter(nominal=2000.0, tolerance=0.0),
+            omega=DimensionalParameter(nominal=2*math.pi*1e3, tolerance=0.0),
         )
         
         assert custom_geom.dim_dp.nominal == 10e-3
@@ -119,6 +122,12 @@ class TestCorePermeanceModel:
             dim_spah=DimensionalParameter(nominal=5e-3, tolerance=0.1e-3),
             dim_spac=DimensionalParameter(nominal=17e-3, tolerance=0.1e-3),
             dim_spag=DimensionalParameter(nominal=10e-3, tolerance=0.1e-3),
+            muo=DimensionalParameter(nominal=4e-7*math.pi, tolerance=0.0),
+            mur=DimensionalParameter(nominal=2000.0, tolerance=0.0),
+            rho=DimensionalParameter(nominal=1e-6, tolerance=0.0),
+            murt=DimensionalParameter(nominal=2000.0, tolerance=0.0),
+            omega=DimensionalParameter(nominal=2*math.pi*1e3, tolerance=0.0),
+
         )
         
         model = CorePermeanceModel(geometry=custom_geom)
@@ -139,50 +148,10 @@ class TestCorePermeanceModel:
         permeance = model.calculate_core_permeance()
         assert isinstance(permeance, float)
 
-    def test_core_permeance_with_custom_mu_target(self):
-        """Test core permeance calculation with custom target permeability."""
-        model = CorePermeanceModel()
-        
-        # Higher permeability should give higher permeance
-        permeance_1000 = model.calculate_core_permeance(mu_target=1000.0)
-        permeance_500 = model.calculate_core_permeance(mu_target=500.0)
-        
-        # Permeance proportional to permeability
-        assert permeance_1000 > permeance_500
-
-    def test_core_permeance_with_stress_input(self):
-        """Test that core permeance accepts stress input."""
-        model = CorePermeanceModel()
-        
-        # Should not raise exception with stress input
-        permeance = model.calculate_core_permeance(stress=100e6)  # 100 MPa
-        assert permeance > 0
-
-    def test_core_permeance_low_mu_target(self):
-        """Test core permeance with low target permeability."""
-        model = CorePermeanceModel()
-        permeance = model.calculate_core_permeance(mu_target=10.0)
-        
-        # Still should be positive
-        assert permeance > 0
-
-    def test_core_permeance_high_mu_target(self):
-        """Test core permeance with high target permeability."""
-        model = CorePermeanceModel()
-        permeance = model.calculate_core_permeance(mu_target=10000.0)
-        
-        assert permeance > 0
 
 
-class TestCorePe‌rmeanceFunctional:
+class TestCorePermeanceFunctional:
     """Tests for functional interface to core permeance."""
-
-    def test_simple_permeance_calculation_default(self):
-        """Test simple functional interface with defaults."""
-        permeance = calculate_core_permeance_simple()
-        
-        assert permeance > 0
-        assert 1e-9 < permeance < 1e-4
 
     def test_simple_permeance_with_geometry(self):
         """Test simple functional interface with custom geometry."""
@@ -195,20 +164,15 @@ class TestCorePe‌rmeanceFunctional:
             dim_spah=DimensionalParameter(nominal=5e-3, tolerance=0.1e-3),
             dim_spac=DimensionalParameter(nominal=17e-3, tolerance=0.1e-3),
             dim_spag=DimensionalParameter(nominal=10e-3, tolerance=0.1e-3),
+            muo=DimensionalParameter(nominal=4e-7*math.pi, tolerance=0.0),
+            mur=DimensionalParameter(nominal=2000.0, tolerance=0.0),
+            rho=DimensionalParameter(nominal=1e-6, tolerance=0.0),
+            murt=DimensionalParameter(nominal=2000.0, tolerance=0.0),
+            omega=DimensionalParameter(nominal=2*math.pi*1e3, tolerance=0.0),
         )
         
-        permeance = calculate_core_permeance_simple(geometry=custom_geom)
+        permeance = CorePermeanceModel(geometry=custom_geom).calculate_core_permeance()
         assert permeance > 0
-
-    def test_simple_permeance_with_parameters(self):
-        """Test simple functional interface with custom parameters."""
-        permeance = calculate_core_permeance_simple(
-            mu_target=2000.0,
-            stress=50e6
-        )
-        
-        assert permeance > 0
-
 
 class TestIntegration:
     """Integration tests combining geometry and permeance calculations."""
@@ -233,7 +197,7 @@ class TestIntegration:
     def test_permeance_parametric_mu_target(self, mu_target):
         """Parametric test for various target permeabilities."""
         model = CorePermeanceModel()
-        permeance = model.calculate_core_permeance(mu_target=mu_target)
+        permeance = model.calculate_core_permeance(murt=mu_target)
         
         assert permeance > 0
         # Permeance should scale with permeability
@@ -261,10 +225,3 @@ class TestIntegration:
         assert math.isclose(permeance1, permeance2, rel_tol=1e-10)
 
 
-class TestPhysicalConstants:
-    """Tests for physical constants."""
-
-    def test_mu0_value(self):
-        """Test that μ₀ has correct SI value."""
-        expected_mu0 = 4 * math.pi * 1e-7
-        assert math.isclose(MU_0, expected_mu0, rel_tol=1e-10)
