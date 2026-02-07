@@ -45,8 +45,6 @@ class CorePermeanceModel:
     def calculate_core_permeance(
         self,
         *,
-        murt: float | None = None,
-        stress: float | None = None,
         muo: float | None = None,
         mur: float | None = None,
         rho: float | None = None,
@@ -58,10 +56,6 @@ class CorePermeanceModel:
 
         Parameters
         ----------
-        murt : float, optional
-            Target relative permeability. If None, uses geometry.murt.
-        stress : float, optional
-            Applied stress [Pa]. Placeholder for inverse magnetostriction effects.
         muo : float, optional
             Vacuum permeability override. If None, uses geometry.muo.
         mur : float, optional
@@ -88,7 +82,6 @@ class CorePermeanceModel:
 
         muo = self.geometry.muo.nominal if muo is None else muo
         mur = self.geometry.mur.nominal if mur is None else mur
-        murt = self.geometry.murt.nominal if murt is None else murt
         rho = self.geometry.rho.nominal if rho is None else rho
         omega = self.geometry.omega.nominal if omega is None else omega
 

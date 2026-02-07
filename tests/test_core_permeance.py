@@ -191,26 +191,26 @@ class TestIntegration:
         assert permeance > 0
 
     @pytest.mark.parametrize(
-        "mu_target",
+        "mu_core",
         [100.0, 500.0, 1000.0, 2000.0, 5000.0],
     )
-    def test_permeance_parametric_mu_target(self, mu_target):
-        """Parametric test for various target permeabilities."""
+    def test_permeance_parametric_mu_core(self, mu_core):
+        """Parametric test for various core permeabilities."""
         model = CorePermeanceModel()
-        permeance = model.calculate_core_permeance(murt=mu_target)
+        permeance = model.calculate_core_permeance(mur=mu_core)
         
         assert permeance > 0
         # Permeance should scale with permeability
         assert 1e-9 < permeance < 1e-4
 
     @pytest.mark.parametrize(
-        "stress",
-        [0.0, 50e6, 100e6, -50e6, -100e6],  # Tensile and compressive
+        "omega_op",
+        [f * 2 * math.pi for f in [1000, 5000, 10000, 20000, 50000, 70000, 100000]],  # Low to high frequencies [rad/s]
     )
-    def test_permeance_parametric_stress(self, stress):
-        """Parametric test for various stress levels."""
+    def test_permeance_parametric_omega(self, omega_op):
+        """Parametric test for various frequency levels."""
         model = CorePermeanceModel()
-        permeance = model.calculate_core_permeance(stress=stress)
+        permeance = model.calculate_core_permeance(omega=omega_op)
         
         assert permeance > 0
 
