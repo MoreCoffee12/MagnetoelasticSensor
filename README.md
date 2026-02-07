@@ -6,7 +6,7 @@ Python libraries used to model magnetoelastic (inverse magnetostrictive) sensors
 
 You already know about these sensors and want to get the code? Here’s an index and sample programs to get you started:
 
--   First entry goes here.
+-   HelloWorld.ipynb – Excercises all the functions and estimates sensor response over gap and torque.
 
 # What is a magnetoelastic sensor?
 
@@ -16,7 +16,7 @@ The magnetic properties of ferromagnetic materials change under stress. A magnet
 
 Magnetostriction describes a ferromagnetic material’s response to a magnetic field. These materials change shape in the presence of a field. The figure hows the mechanism behind magnetostriction. The top row shows the magnetic domains above the Curie temperature. In this state, the domain orientation varies. When the environmental temperature falls below the Curie temperature, applying a strong magnetic field rotates the spins and the electron clouds to a new orientation.
 
-![](media/1465d5f6c6a238e65a771ccd9ae2cc28.png)
+![](media/95e088787f7b26414f4c80c659e5562a.png)
 
 Line drawing showing a sketch of magnetostrictive mechanism. (original vector image from [Adobe Stock](https://stock.adobe.com/) File ID: [898634968](https://stock.adobe.com/stock-photo/id/898634968)).
 
