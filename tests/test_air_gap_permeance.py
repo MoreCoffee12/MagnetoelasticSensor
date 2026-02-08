@@ -156,12 +156,12 @@ class TestAirGapPermeanceFunctional:
         assert permeance[1] > 0
 
         # From the "Sense pole (circular) air gap permeance" section 
-        # of the "UncertaintyChain.nb" notebook
+        # of the "ModelAndUncertainty.nb" notebook
         expected_permeance = 4.799748476441882e-8
         assert math.isclose(permeance[0], expected_permeance, rel_tol=1e-8)
 
         # From the "Drive pole (circular) air gap permeance" section 
-        # of the "UncertaintyChain.nb" notebook
+        # of the "ModelAndUncertainty.nb" notebook
         expected_permeance = 1.304100211826622e-7
         assert math.isclose(permeance[1], expected_permeance, rel_tol=1e-8)
 

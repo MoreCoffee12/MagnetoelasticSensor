@@ -128,12 +128,12 @@ DEFAULT_SENSOR_GEOMETRY = SensorGeometry(
 
     # Coil turns
     ndrive=DimensionalParameter(
-        nominal=800.0,  # Number of turns on drive coil [dimensionless]
-        tolerance=0.0
+        nominal=60.0,  # Number of turns on drive coil [dimensionless]
+        tolerance=1.0  # We sometimes take a turn or two off to impedance match
     ),
     nsense=DimensionalParameter(
-        nominal=60.0,  # Number of turns on sense coil [dimensionless]
-        tolerance=0.0
+        nominal=100.0,  # Number of turns on sense coil [dimensionless]
+        tolerance=1.0  # We sometimes take a turn or two off to impedance match
     ),
     
     # Bridge/pole arm: width 4.50mm ± 0.08mm, height 4.25mm ± 0.08mm, length 16.0mm ± 0.08mm

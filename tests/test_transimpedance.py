@@ -9,9 +9,13 @@ import math
 import cmath
 import pytest
 from magnetoelasticsensor.air_gap_permeance import calculate_air_gap_permeance
+from magnetoelasticsensor.core_permeance import CorePermeanceModel
 from magnetoelasticsensor.cross_leakage_permeance import CrossLeakagePermeanceModel
 from magnetoelasticsensor.geometry import DEFAULT_SENSOR_GEOMETRY
-from magnetoelasticsensor.permeance import calculate_effective_permeance
+from magnetoelasticsensor.permeance import (
+    calculate_effective_permeance,
+    calculate_equivalent_permeance,
+)
 from magnetoelasticsensor.transimpedance import (
     calculate_normalized_impedance,
     calculate_transimpedance,
@@ -66,7 +70,7 @@ class TestNormalizedImpedance:
         assert isinstance(z, complex)
         assert math.isfinite(abs(z))
 
-        # Copied over from "Calculate the normalized impedance" section in "UncertaintyChain.nb" notebook
+        # Copied over from "Calculate the normalized impedance" section in "ModelAndUncertainty.nb" notebook
         z_expected = complex(0.32936430169468783, -0.01725711423759577)  
         
         assert cmath.isclose(z, z_expected, rel_tol=1e-8)
@@ -168,6 +172,49 @@ class TestTransimpedance:
         
         # Scaling by 1/4 in turn product (50*50 vs 100*100)
         assert abs(z_100_100) == pytest.approx(4 * abs(z_50_50), rel=1e-10)
+
+    def test_transimpedance_default_values(self):
+        """Test with default magnetoelastic sensor values."""
+        # Get permeances using default geometry
+        model = TargetPermeanceModel()
+        pt, p3 = model.calculate_target_permeance()
+        
+        model = CorePermeanceModel()
+        p_core = model.calculate_core_permeance()
+        
+        p_gaps, p_gapd = calculate_air_gap_permeance()
+        p = calculate_effective_permeance(pt=pt, p_gapd=p_gapd, p_gaps=p_gaps)
+        
+        model = CrossLeakagePermeanceModel()
+        p_sd = model.calculate_cross_leakage_permeance()
+        
+        # Get equivalent permeance (for 4-branch sensor circuit)
+        p_eq = calculate_equivalent_permeance(p_core=p_core, p=p, p_sd=p_sd)
+        
+        # Get damping factor from default geometry
+        epsilon = math.tan(math.radians(DEFAULT_SENSOR_GEOMETRY.theta3_deg.nominal))
+        
+        # Get coil turn counts from default geometry
+        nd = int(DEFAULT_SENSOR_GEOMETRY.ndrive.nominal)
+        ns = int(DEFAULT_SENSOR_GEOMETRY.nsense.nominal)
+        
+        # Use a standard test frequency
+        omega = DEFAULT_SENSOR_GEOMETRY.omega.nominal
+        
+        # Call the function under test
+        z = calculate_transimpedance(
+            nd=nd, ns=ns, p_eq=p_eq, omega=omega,
+            p3=p3, p_sd=p_sd, p=p, epsilon=epsilon
+        )
+        
+        # Low-level sanity checks on the output
+        assert isinstance(z, complex)
+        assert math.isfinite(abs(z))
+
+        # Copied over from "Final transimpedance and phase angle" section 
+        # in "ModelAndUncertainty.nb" notebook
+        z_expected = complex(1.0367383762826108, 19.786889432562443)
+        assert cmath.isclose(z, z_expected, rel_tol=1e-8)
 
     def test_transimpedance_raises_for_zero_turns(self):
         """Test that ValueError is raised for zero turn count."""

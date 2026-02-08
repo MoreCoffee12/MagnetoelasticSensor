@@ -58,7 +58,7 @@ class TestCrossLeakagePermeanceModel:
         assert isinstance(permeance, float)
         assert permeance > 0
 
-        # From "Cross-leakage  permeance calculations" section in "UncertaintyChain.nb" notebook,
+        # From "Cross-leakage  permeance calculations" section in "ModelAndUncertainty.nb" notebook,
         expected_permeance = 2.329754661676527e-8 
         assert math.isclose(permeance, expected_permeance, rel_tol=1e-8)
 

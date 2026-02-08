@@ -147,7 +147,7 @@ class TestCorePermeanceModel:
         model = CorePermeanceModel()
         permeance = model.calculate_core_permeance()
         
-        # This is from the section "Combined permeances" in the "UncertaintyChain.nb" notebook
+        # This is from the section "Combined permeances" in the "ModelAndUncertainty.nb" notebook
         d_permeance_expected = 1.261860054772294e-6
         assert math.isclose(d_permeance_expected, permeance, rel_tol=1e-8)
 

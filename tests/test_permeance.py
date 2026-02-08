@@ -90,7 +90,7 @@ class TestCrossLeakageUParameter:
         u = cross_leakage_u_parameter(dimspagi, dimdp, dimspi)
         
         # Manual calculation in "Cross-leakage  permeance calculations" 
-        # section in "UncertaintyChain.nb" notebook.
+        # section in "ModelAndUncertainty.nb" notebook.
         expected = 10.68421052631579
         assert math.isclose(u, expected, rel_tol=1e-10)
 
@@ -350,7 +350,7 @@ class TestEffectivePermeance:
         assert math.isclose(result, expected, rel_tol=1e-10)
         assert result > 0
 
-        # The maths worked, validate against the "Effective Permeance" section in "UncertaintyChain.nb" notebook.
+        # The maths worked, validate against the "Effective Permeance" section in "ModelAndUncertainty.nb" notebook.
         expected_effective_permeance = 2.493130356444797e-8
         assert math.isclose(result, expected_effective_permeance, rel_tol=1e-8)
 
@@ -475,7 +475,7 @@ class TestEquivalentPermeance:
         assert math.isclose(result, expected, rel_tol=1e-10)
         assert result > 0
 
-        # The maths did math, validate against the "Equivalent Permeance" section in "UncertaintyChain.nb" notebook.
+        # The maths did math, validate against the "Equivalent Permeance" section in "ModelAndUncertainty.nb" notebook.
         expected_equivalent_permeance = 3.187130729713295e-8
         assert math.isclose(result, expected_equivalent_permeance, rel_tol=1e-8)
 

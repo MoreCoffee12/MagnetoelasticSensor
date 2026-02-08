@@ -63,7 +63,7 @@ class TestTargetPermeanceModel:
         assert Pt[0] > 0
         assert math.isfinite(Pt[0])
 
-        # Expected value from the "Target permeance" section of "UncertaintyChain.nb" notebook
+        # Expected value from the "Target permeance" section of "ModelAndUncertainty.nb" notebook
         expected_permeance = 8.61499356947014e-8
         assert math.isclose(Pt[0], expected_permeance, rel_tol=1e-8)
         expected_permeance = 4.459077766957076e-10
