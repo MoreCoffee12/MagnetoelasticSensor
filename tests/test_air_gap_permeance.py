@@ -52,6 +52,7 @@ class TestAirGapPermeanceModel:
             murt=DimensionalParameter(nominal=2000.0, tolerance=0.0),
             omega=DimensionalParameter(nominal=2*math.pi*1e3, tolerance=0.0),
             avg_gap=DimensionalParameter(nominal=1.143e-3, tolerance=1e-5),
+            sigmac=DimensionalParameter(nominal=100/22, tolerance=5/22),
         )
         
         model = AirGapPermeanceModel(geometry=custom_geom)
@@ -75,6 +76,8 @@ class TestAirGapPermeanceModel:
             murt=DimensionalParameter(nominal=2000.0, tolerance=0.0),
             omega=DimensionalParameter(nominal=2*math.pi*1e3, tolerance=0.0),
             avg_gap=DimensionalParameter(nominal=1.143e-3, tolerance=1e-5),
+            sigmac=DimensionalParameter(nominal=100/22, tolerance=5/22),
+
         )
         custom_gap = 8e-3  # 8mm
         
@@ -179,6 +182,7 @@ class TestAirGapPermeanceFunctional:
             murt=DimensionalParameter(nominal=2000.0, tolerance=0.0),
             omega=DimensionalParameter(nominal=2*math.pi*1e3, tolerance=0.0),
             avg_gap=DimensionalParameter(nominal=1.143e-3, tolerance=1e-5),
+            sigmac=DimensionalParameter(nominal=100/22, tolerance=5/22),
         )
         
         permeance = calculate_air_gap_permeance(geometry=custom_geom)
@@ -201,6 +205,7 @@ class TestAirGapPermeanceFunctional:
             murt=DimensionalParameter(nominal=2000.0, tolerance=0.0),
             omega=DimensionalParameter(nominal=2*math.pi*1e3, tolerance=0.0),
             avg_gap=DimensionalParameter(nominal=1.143e-3, tolerance=1e-5),
+            sigmac=DimensionalParameter(nominal=100/22, tolerance=5/22),
         )
         
         permeance = calculate_air_gap_permeance(

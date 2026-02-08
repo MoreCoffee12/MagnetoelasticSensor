@@ -11,6 +11,46 @@ import math
 MU_0 = 4 * math.pi * 1e-7  # Permeability of free space [H/m]
 
 
+def calculate_skin_depth(
+    muo: float,
+    mur: float,
+    omega: float,
+    sigma_c: float,
+) -> float:
+    """
+    Calculate the average eddy current skin depth for the target material.
+
+    From Jiles:
+        delta = sqrt(2) * sqrt(1 / (muo * mur * omega * sigma_c))
+
+    References:
+    - Jiles, David. Introduction to Magnetism and Magnetic Materials. 
+      3rd ed., Springer Boston, MA, 2016.
+
+    Parameters
+    ----------
+    muo : float
+        Vacuum permeability [H/m].
+    mur : float
+        Relative permeability of the material (dimensionless).
+    omega : float
+        Angular frequency [rad/s].
+    sigma_c : float
+        Electrical conductivity [S/m].
+
+    Returns
+    -------
+    float
+        Skin depth delta [m].
+    """
+    if muo <= 0 or mur <= 0 or omega <= 0 or sigma_c <= 0:
+        raise ValueError(
+            "muo, mur, omega, and sigma_c must all be positive to compute skin depth"
+        )
+
+    return math.sqrt(2.0) * math.sqrt(1.0 / (muo * mur * omega * sigma_c))
+
+
 def calculate_g2_parameter(gap_distance: float, pole_spacing: float) -> float:
     """
     Calculate the g2 geometric parameter for fringing field calculations.

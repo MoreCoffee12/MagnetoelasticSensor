@@ -81,6 +81,9 @@ class SensorGeometry:
 
     # Operating frequency (for eddy current calculations)
     omega: DimensionalParameter  # Angular frequency [rad/s]
+
+    # Target conductivity
+    sigmac: DimensionalParameter  # Electrical conductivity of target material [S/m]
     
     def __repr__(self) -> str:
         return (
@@ -180,5 +183,15 @@ DEFAULT_SENSOR_GEOMETRY = SensorGeometry(
         nominal=1.143/1000,  # Average gap distance [m]
         tolerance=1.0/100000  # What you get with plastic feeler gauges
     ),  
+
+    # Target conductivity
+    # Reference:
+    # - Material Data Sheet for AISI 4140 Steel." Knovel, 
+    #   www.knovel.com/web/portal/knovel_content?p_p_id=EXT_KNOVEL_CONTENT. 
+    #   Accessed 12 Oct. 2011.
+    sigmac=DimensionalParameter(
+        nominal=100000000/22,  # Electrical conductivity of target material [S/m]
+        tolerance=5000000/22  # Estimated 
+    )
 
 )

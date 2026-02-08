@@ -9,6 +9,7 @@ import pytest
 from magnetoelasticsensor.permeance import (
     cross_leakage_gu,
     cross_leakage_u_parameter,
+    calculate_skin_depth,
     MU_0,
 )
 from magnetoelasticsensor.geometry import SensorGeometry, DEFAULT_SENSOR_GEOMETRY
@@ -143,6 +144,131 @@ class TestPhysicalConstants:
         """Verify μ₀ is in correct units (H/m)."""
         # μ₀ should be approximately 1.256637e-6 H/m
         assert 1.25e-6 < MU_0 < 1.27e-6
+
+
+class TestSkinDepth:
+    """Tests for eddy current skin depth calculation."""
+
+    def test_skin_depth_nominal_geometry(self):
+        
+        """Test skin depth calculation with nominal geometry."""
+        muo = DEFAULT_SENSOR_GEOMETRY.muo.nominal
+        murt = DEFAULT_SENSOR_GEOMETRY.murt.nominal
+        omega = DEFAULT_SENSOR_GEOMETRY.omega.nominal
+        sigma_c = DEFAULT_SENSOR_GEOMETRY.sigmac.nominal
+        
+        delta = calculate_skin_depth(muo=muo, mur=murt, omega=omega, sigma_c=sigma_c)
+        
+        # Verify empirical formula: delta = sqrt(2) * sqrt(1 / (muo * mur * omega * sigma_c))
+        expected = math.sqrt(2.0) * math.sqrt(1.0 / (muo * murt * omega * sigma_c))
+        assert math.isclose(delta, expected, rel_tol=1e-10)
+
+        # Sanity check against the 4140 shaft values in "SkinDepthStress.nb" notebook
+        expected_delta = 0.00003338462250895936
+        assert math.isclose(delta, expected_delta, rel_tol=1e-10)
+
+    def test_skin_depth_returns_positive(self):
+        """Test that skin depth returns positive values."""
+        muo = DEFAULT_SENSOR_GEOMETRY.muo.nominal
+        mur = DEFAULT_SENSOR_GEOMETRY.mur.nominal
+        omega = DEFAULT_SENSOR_GEOMETRY.omega.nominal
+        sigma_c = DEFAULT_SENSOR_GEOMETRY.sigmac.nominal
+        
+        delta = calculate_skin_depth(muo=muo, mur=mur, omega=omega, sigma_c=sigma_c)
+        assert delta > 0
+
+    def test_skin_depth_decreases_with_frequency(self):
+        """Test that skin depth decreases with increasing frequency."""
+        muo = DEFAULT_SENSOR_GEOMETRY.muo.nominal
+        mur = DEFAULT_SENSOR_GEOMETRY.mur.nominal
+        sigma_c = 1e6
+        
+        delta_low_freq = calculate_skin_depth(
+            muo=muo, mur=mur, omega=2*math.pi*10e3, sigma_c=sigma_c
+        )
+        delta_high_freq = calculate_skin_depth(
+            muo=muo, mur=mur, omega=2*math.pi*100e3, sigma_c=sigma_c
+        )
+        
+        # Higher frequency → lower skin depth
+        assert delta_low_freq > delta_high_freq
+
+    def test_skin_depth_decreases_with_conductivity(self):
+        """Test that skin depth decreases with increasing conductivity."""
+        muo = DEFAULT_SENSOR_GEOMETRY.muo.nominal
+        mur = DEFAULT_SENSOR_GEOMETRY.mur.nominal
+        omega = DEFAULT_SENSOR_GEOMETRY.omega.nominal
+        
+        delta_low_sigma = calculate_skin_depth(
+            muo=muo, mur=mur, omega=omega, sigma_c=5e5
+        )
+        delta_high_sigma = calculate_skin_depth(
+            muo=muo, mur=mur, omega=omega, sigma_c=2e6
+        )
+        
+        # Higher conductivity → lower skin depth
+        assert delta_low_sigma > delta_high_sigma
+
+    def test_skin_depth_decreases_with_permeability(self):
+        """Test that skin depth decreases with increasing permeability."""
+        muo = 4 * math.pi * 1e-7
+        omega = 2 * math.pi * 50e3
+        sigma_c = 1e6
+        
+        delta_low_mur = calculate_skin_depth(
+            muo=muo, mur=500.0, omega=omega, sigma_c=sigma_c
+        )
+        delta_high_mur = calculate_skin_depth(
+            muo=muo, mur=2000.0, omega=omega, sigma_c=sigma_c
+        )
+        
+        # Higher permeability → lower skin depth
+        assert delta_low_mur > delta_high_mur
+
+    def test_skin_depth_raises_for_zero_muo(self):
+        """Test that ValueError is raised for zero permeability."""
+        with pytest.raises(ValueError, match="must all be positive"):
+            calculate_skin_depth(muo=0, mur=1000.0, omega=2*math.pi*50e3, sigma_c=1e6)
+
+    def test_skin_depth_raises_for_zero_mur(self):
+        """Test that ValueError is raised for zero relative permeability."""
+        with pytest.raises(ValueError, match="must all be positive"):
+            calculate_skin_depth(muo=4*math.pi*1e-7, mur=0, omega=2*math.pi*50e3, sigma_c=1e6)
+
+    def test_skin_depth_raises_for_zero_omega(self):
+        """Test that ValueError is raised for zero frequency."""
+        with pytest.raises(ValueError, match="must all be positive"):
+            calculate_skin_depth(muo=4*math.pi*1e-7, mur=1000.0, omega=0, sigma_c=1e6)
+
+    def test_skin_depth_raises_for_zero_sigma_c(self):
+        """Test that ValueError is raised for zero conductivity."""
+        with pytest.raises(ValueError, match="must all be positive"):
+            calculate_skin_depth(muo=4*math.pi*1e-7, mur=1000.0, omega=2*math.pi*50e3, sigma_c=0)
+
+    def test_skin_depth_raises_for_negative_muo(self):
+        """Test that ValueError is raised for negative permeability."""
+        with pytest.raises(ValueError, match="must all be positive"):
+            calculate_skin_depth(muo=-4*math.pi*1e-7, mur=1000.0, omega=2*math.pi*50e3, sigma_c=1e6)
+
+    def test_skin_depth_raises_for_negative_sigma_c(self):
+        """Test that ValueError is raised for negative conductivity."""
+        with pytest.raises(ValueError, match="must all be positive"):
+            calculate_skin_depth(muo=4*math.pi*1e-7, mur=1000.0, omega=2*math.pi*50e3, sigma_c=-1e6)
+
+    @pytest.mark.parametrize(
+        "muo,mur,omega,sigma_c",
+        [
+            (4*math.pi*1e-7, 500.0, 2*math.pi*10e3, 1e6),
+            (4*math.pi*1e-7, 1000.0, 2*math.pi*50e3, 5e5),
+            (4*math.pi*1e-7, 2000.0, 2*math.pi*100e3, 2e6),
+            (4*math.pi*1e-7, 1500.0, 2*math.pi*75e3, 1.5e6),
+        ],
+    )
+    def test_skin_depth_parametric(self, muo, mur, omega, sigma_c):
+        """Test skin depth calculation with various parameter combinations."""
+        delta = calculate_skin_depth(muo=muo, mur=mur, omega=omega, sigma_c=sigma_c)
+        assert delta > 0
+        assert math.isfinite(delta)
 
 
 class TestIntegration:

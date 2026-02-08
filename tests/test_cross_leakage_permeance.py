@@ -41,6 +41,7 @@ class TestCrossLeakagePermeanceModel:
             murt=DimensionalParameter(nominal=2000.0, tolerance=0.0),
             omega=DimensionalParameter(nominal=2*math.pi*1e3, tolerance=0.0),
             avg_gap=DimensionalParameter(nominal=1.143e-3, tolerance=1e-5),
+            sigmac=DimensionalParameter(nominal=100/22, tolerance=5/22),
         )
         model = CrossLeakagePermeanceModel(geometry=custom_geom)
         assert model.geometry == custom_geom
@@ -104,6 +105,7 @@ class TestCrossLeakagePermeanceFunctional:
             murt=DimensionalParameter(nominal=2000.0, tolerance=0.0),
             omega=DimensionalParameter(nominal=2*math.pi*1e3, tolerance=0.0),
             avg_gap=DimensionalParameter(nominal=1.143e-3, tolerance=1e-5),
+            sigmac=DimensionalParameter(nominal=100/22, tolerance=5/22),
         )
         model = CrossLeakagePermeanceModel(geometry=custom_geom)
         permeance = model.calculate_cross_leakage_permeance()
