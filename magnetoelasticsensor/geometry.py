@@ -56,15 +56,15 @@ class SensorGeometry:
     
     # Drive pole (primary coil connection)
     dim_dp: DimensionalParameter  # Drive pole diameter
-    dim_sph_drive: DimensionalParameter  # Drive pole height [mm]
+    dim_sph_drive: DimensionalParameter  # Drive pole height [m]
     
     # Sense pole (secondary coil connection)
-    dim_sp: DimensionalParameter  # Sense pole diameter [mm]
-    dim_sph_sense: DimensionalParameter  # Sense pole height [mm]
+    dim_sp: DimensionalParameter  # Sense pole diameter [m]
+    dim_sph_sense: DimensionalParameter  # Sense pole height [m]
     
     # Bridge / Pole arm (ferrite structure connecting poles)
-    dim_spaw: DimensionalParameter  # Bridge width [mm]
-    dim_spah: DimensionalParameter  # Bridge height [mm]
+    dim_spaw: DimensionalParameter  # Bridge width [m]
+    dim_spah: DimensionalParameter  # Bridge height [m]
     dim_spac: DimensionalParameter  # Bridge length (distance between pole centers)
 
     # Core magnetic properties (not geometric but included for completeness)

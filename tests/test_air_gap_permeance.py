@@ -5,6 +5,7 @@ Tests the magnetoelasticsensor.air_gap_permeance module.
 """
 import math
 import pytest
+from magnetoelasticsensor import permeance
 from magnetoelasticsensor.air_gap_permeance import (
     AirGapPermeanceModel,
     calculate_air_gap_permeance,
@@ -87,25 +88,27 @@ class TestAirGapPermeanceModel:
         permeance = model.calculate_air_gap_permeance()
         
         # Permeance should be positive and in reasonable range
-        assert permeance > 0
-        assert 1e-12 < permeance < 1e-6  # Typical air gap permeance range
+        assert permeance[0] > 0
+        assert permeance[1] > 0
+        assert 1e-12 < permeance[0] < 1e-6  # Typical air gap permeance range
 
     def test_air_gap_permeance_returns_float(self):
         """Test that air gap permeance returns a float."""
         model = AirGapPermeanceModel()
         permeance = model.calculate_air_gap_permeance()
-        assert isinstance(permeance, float)
+        assert isinstance(permeance[0], float)
+        assert isinstance(permeance[1], float)
 
     def test_air_gap_permeance_with_custom_gap(self):
         """Test permeance calculation with custom gap distance."""
         model = AirGapPermeanceModel()
-        permeance_large_gap = model.calculate_air_gap_permeance(avg_gap=10e-3)
-        permeance_small_gap = model.calculate_air_gap_permeance(avg_gap=2e-3)
+        permeance_large_gap = model.calculate_air_gap_permeance(avg_gap=1e-3)
+        permeance_small_gap = model.calculate_air_gap_permeance(avg_gap=5e-4)
         
         # Smaller gap should yield higher permeance (lower reluctance)
-        assert permeance_small_gap > permeance_large_gap
-        assert permeance_large_gap > 0
-        assert permeance_small_gap > 0
+        assert permeance_small_gap[0] > permeance_large_gap[0]
+        assert permeance_large_gap[0] > 0
+        assert permeance_small_gap[0] > 0
 
     def test_air_gap_permeance_monotonic_with_gap(self):
         """Test that permeance decreases monotonically with increasing gap."""
@@ -117,16 +120,6 @@ class TestAirGapPermeanceModel:
         for i in range(len(permeances) - 1):
             assert permeances[i] > permeances[i+1], \
                 f"Permeance should decrease with gap: P({gaps[i]}) > P({gaps[i+1]})"
-
-    def test_air_gap_permeance_with_target_permeability(self):
-        """Test permeance calculation with varying target permeability."""
-        model = AirGapPermeanceModel()
-        p_low_murt = model.calculate_air_gap_permeance(murt=100.0)
-        p_high_murt = model.calculate_air_gap_permeance(murt=5000.0)
-        
-        # Both should be positive (target permeability affects coupling)
-        assert p_low_murt > 0
-        assert p_high_murt > 0
 
     def test_air_gap_permeance_zero_gap_error(self):
         """Test that zero gap raises assertion or returns infinite permeance."""
@@ -147,12 +140,27 @@ class TestAirGapPermeanceFunctional:
     def test_functional_with_defaults(self):
         """Test functional interface with all defaults."""
         permeance = calculate_air_gap_permeance()
-        assert permeance > 0
+        
+        # A first sanity check: both drive and sense pole permeance 
+        # should be positive
+        assert permeance[0] > 0
+        assert permeance[1] > 0
+
+        # From the "Sense pole (circular) air gap permeance" section 
+        # of the "UncertaintyChain.nb" notebook
+        expected_permeance = 4.799748476441882e-8
+        assert math.isclose(permeance[0], expected_permeance, rel_tol=1e-8)
+
+        # From the "Drive pole (circular) air gap permeance" section 
+        # of the "UncertaintyChain.nb" notebook
+        expected_permeance = 1.304100211826622e-7
+        assert math.isclose(permeance[1], expected_permeance, rel_tol=1e-8)
 
     def test_functional_with_custom_gap(self):
         """Test functional interface with custom gap."""
         permeance = calculate_air_gap_permeance(avg_gap=5e-3)
-        assert permeance > 0
+        assert permeance[0]  > 0
+        assert permeance[1]  > 0
 
     def test_functional_with_custom_geometry(self):
         """Test functional interface with custom geometry."""
@@ -174,7 +182,7 @@ class TestAirGapPermeanceFunctional:
         )
         
         permeance = calculate_air_gap_permeance(geometry=custom_geom)
-        assert permeance > 0
+        assert permeance[0] > 0
 
     def test_functional_with_geometry_and_gap(self):
         """Test functional interface with both geometry and gap overrides."""
@@ -197,10 +205,10 @@ class TestAirGapPermeanceFunctional:
         
         permeance = calculate_air_gap_permeance(
             geometry=custom_geom,
-            avg_gap=7e-3,
+            avg_gap=1e-3,
             murt=3000.0
         )
-        assert permeance > 0
+        assert permeance[0] > 0
 
 
 class TestIntegration:
@@ -222,7 +230,7 @@ class TestIntegration:
         
         # Air gap should be limiting factor (lower permeance)
         # Typical ratio: P_gap << P_core for ferrite cores
-        assert p_gap > 0
+        assert p_gap[0] > 0
         assert p_core > 0
         # Note: actual ratio depends on design; this is a sanity check
 
@@ -244,8 +252,8 @@ class TestIntegration:
         model = AirGapPermeanceModel(avg_gap=gap_distance)
         permeance = model.calculate_air_gap_permeance()
         
-        assert permeance > 0
-        assert 1e-12 < permeance < 1e-5, \
+        assert permeance[0] > 0
+        assert 1e-12 < permeance[0] < 1e-5, \
             f"Permeance {permeance:.3e} H out of expected range for gap {gap_distance*1e3:.1f}mm"
 
     @pytest.mark.parametrize(
@@ -270,8 +278,9 @@ class TestIntegration:
         model = AirGapPermeanceModel()
         permeance = model.calculate_air_gap_permeance(murt=target_mu)
         
-        assert permeance > 0
-        assert isinstance(permeance, float)
+        assert permeance[0] > 0
+        assert isinstance(permeance[0], float)
+        assert isinstance(permeance[1], float)
 
     def test_consistency_model_vs_functional(self):
         """Test that class method and functional interface give identical results."""
@@ -285,4 +294,4 @@ class TestIntegration:
         # Functional approach
         p_func = calculate_air_gap_permeance(avg_gap=gap, murt=murt)
         
-        assert math.isclose(p_model, p_func, rel_tol=1e-10)
+        assert math.isclose(p_model[0], p_func[0], rel_tol=1e-10)

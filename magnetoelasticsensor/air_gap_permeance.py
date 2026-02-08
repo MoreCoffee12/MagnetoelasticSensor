@@ -104,21 +104,147 @@ class AirGapPermeanceModel:
         murt = self.geometry.murt.nominal if murt is None else murt
         
         # Extract pole geometry (nominal values)
-        dimsphi = self.geometry.dim_sph_drive.nominal # Drive pole diameter [mm]
-        dimspi = self.geometry.dim_sp.nominal # Sense pole diameter [mm]
+        dimsphi = self.geometry.dim_sph_drive.nominal # Drive/sense pole height [m]
+        dimdp = self.geometry.dim_dp.nominal # Drive pole diameter [m]
+        dimspi = self.geometry.dim_sp.nominal # Sense pole diameter [m]
+        dimspagi = self.geometry.dim_spag.nominal # Distance between poles [m]
         
         # Basic sanity checks       
         assert d_gap_avg > 0, "Air gap distance must be greater than zero."
         assert muo > 0, "Vacuum permeability must be greater than zero."
         assert murt > 0, "Target relative permeability must be greater than zero."
         
-        # Calculate permeance across the sense pole face.
-        P0s = ((dimspi**2)*muo*math.pi)/(4.*d_gap_avg)
+        # Calculate permeance across the sense pole face, then the drive pole face
+        P0s = calculate_pole_face_permeance(
+            pole_diameter=dimspi,
+            vacuum_permeability=muo,
+            gap_distance=d_gap_avg,
+        )
+        P0d = calculate_pole_face_permeance(
+            pole_diameter=dimdp,
+            vacuum_permeability=muo,
+            gap_distance=d_gap_avg,
+        )
 
+        # Calculate fringing field correction for sense pole, using a simplified model
+        # suggested by Fleming.
+        P1s = calculate_pole_edge_fringing_permeance(
+            pole_diameter=dimspi,
+            vacuum_permeability=muo,
+            gap_distance=d_gap_avg,
+        )
+        P1d = calculate_pole_edge_fringing_permeance(
+            pole_diameter=dimdp,
+            vacuum_permeability=muo,
+            gap_distance=d_gap_avg,
+        )
 
-        permeance = P0s
+        # Calculate the permeance at the sides of the pole. First sense, then drive
+        P2s = calculate_pole_side_permeance(
+            pole_diameter=dimspi,
+            vacuum_permeability=muo,
+            gap_distance=d_gap_avg,
+            pole_spacing=dimspagi,
+        )
+        P2d = calculate_pole_side_permeance(
+            pole_diameter=dimdp,
+            vacuum_permeability=muo,
+            gap_distance=d_gap_avg,
+            pole_spacing=dimspagi,
+        )
+
+        # Return the sum
+        permeance = [(P0s + P1s + P2s), (P0d + P1d + P2d)]    
         
         return permeance
+
+
+def calculate_pole_face_permeance(
+    pole_diameter: float,
+    vacuum_permeability: float,
+    gap_distance: float,
+) -> float:
+    """
+    Calculate the permeance across the face of a pole.
+    
+    Parameters
+    ----------
+    pole_diameter : float
+        Diameter of the pole [mm].
+    vacuum_permeability : float
+        Vacuum permeability [H/m].
+    gap_distance : float
+        Distance between pole and target surface [m].
+    
+    Returns
+    -------
+    float
+        Permeance across the pole face [H].
+    """
+    return ((pole_diameter**2)*vacuum_permeability*math.pi)/(4.*gap_distance)
+
+
+def calculate_pole_side_permeance(
+    pole_diameter: float,
+    vacuum_permeability: float,
+    gap_distance: float,
+    pole_spacing: float,
+) -> float:
+    """
+    Calculate the permeance at the sides of the pole.
+
+    This term captures a simplified fringing-field contribution along the
+    pole sides, based on the pole spacing and average gap distance.
+
+    Parameters
+    ----------
+    pole_diameter : float
+        Pole diameter [m].
+    vacuum_permeability : float
+        Vacuum permeability μ₀ [H/m].
+    gap_distance : float
+        Average gap distance between pole face and target surface [m].
+    pole_spacing : float
+        Distance between poles [m].
+
+    Returns
+    -------
+    float
+        Pole side permeance contribution [H].
+    """
+    g2 = -gap_distance + pole_spacing / math.pi
+    term = pole_diameter / 2.0 + math.sqrt(gap_distance * (gap_distance + g2))
+    return 4.0 * term * vacuum_permeability * math.log(1.0 + g2 / gap_distance)
+
+
+def calculate_pole_edge_fringing_permeance(
+    pole_diameter: float,
+    vacuum_permeability: float,
+    gap_distance: float,
+) -> float:
+    """
+    Calculate the fringing-field permeance correction at the pole face edge.
+
+    This simplified correction follows Fleming's model and accounts for fringe
+    flux at the pole edge as a function of pole diameter and average gap distance.
+
+    Parameters
+    ----------
+    pole_diameter : float
+        Pole diameter [m].
+    vacuum_permeability : float
+        Vacuum permeability μ₀ [H/m].
+    gap_distance : float
+        Average gap distance between pole face and target surface [m].
+
+    Returns
+    -------
+    float
+        Fringing-field permeance correction [H].
+    """
+    return 0.528 * vacuum_permeability * 2.0 * math.pi * (
+        pole_diameter / 2.0 + gap_distance / 2.0
+    )
 
 
 def calculate_air_gap_permeance(
