@@ -10,7 +10,7 @@ from magnetoelasticsensor.permeance import (
     cross_leakage_gu,
     cross_leakage_u_parameter,
     calculate_skin_depth,
-    calculate_series_permeance,
+    calculate_effective_permeance,
     calculate_equivalent_permeance,
     MU_0,
 )
@@ -311,37 +311,37 @@ class TestIntegration:
         assert gu > 0
 
 
-class TestSeriesPermeance:
-    """Tests for series permeance calculation."""
+class TestEffectivePermeance:
+    """Tests for effective permeance calculation."""
 
-    def test_series_permeance_equal_values(self):
-        """Test series permeance with equal permeance values."""
+    def test_effective_permeance_equal_values(self):
+        """Test effective permeance with equal permeance values."""
         p = 1e-8  # 10 nH
-        result = calculate_series_permeance(pt=p, p_gapd=p, p_gaps=p)
+        result = calculate_effective_permeance(pt=p, p_gapd=p, p_gaps=p)
         
         # For three equal permeances: 1/P_total = 1/P + 1/P + 1/P = 3/P
         # Therefore: P_total = P/3
         expected = p / 3.0
         assert math.isclose(result, expected, rel_tol=1e-10)
 
-    def test_series_permeance_two_large_one_small(self):
+    def test_effective_permeance_two_large_one_small(self):
         """Test that smallest permeance dominates in series."""
         p_large = 1e-6  # 1000 nH
         p_small = 1e-9  # 1 nH
         
-        result = calculate_series_permeance(pt=p_large, p_gapd=p_large, p_gaps=p_small)
+        result = calculate_effective_permeance(pt=p_large, p_gapd=p_large, p_gaps=p_small)
         
         # When one permeance is much smaller than others, it dominates
         # Result should be close to but less than p_small
         assert result < p_small
         assert result > 0
 
-    def test_series_permeance_default_values(self):
+    def test_effective_permeance_default_values(self):
         """Test with realistic magnetoelastic sensor permeance values."""
         pt, p3 = calculate_target_permeance()
         p_gaps, p_gapd = calculate_air_gap_permeance()
         
-        result = calculate_series_permeance(pt=pt, p_gapd=p_gapd, p_gaps=p_gaps)
+        result = calculate_effective_permeance(pt=pt, p_gapd=p_gapd, p_gaps=p_gaps)
         
         # Manual calculation: 1/result = 1/pt + 1/p_gapd + 1/p_gaps
         reciprocal_sum = (1.0/pt) + (1.0/p_gapd) + (1.0/p_gaps)
@@ -354,8 +354,8 @@ class TestSeriesPermeance:
         expected_effective_permeance = 2.493130356444797e-8
         assert math.isclose(result, expected_effective_permeance, rel_tol=1e-8)
 
-    def test_series_permeance_returns_positive(self):
-        """Test that series permeance always returns positive values."""
+    def test_effective_permeance_returns_positive(self):
+        """Test that effective permeance always returns positive values."""
         test_cases = [
             (1e-8, 1e-8, 1e-8),
             (1e-7, 5e-8, 2e-8),
@@ -363,50 +363,50 @@ class TestSeriesPermeance:
         ]
         
         for pt, p_gapd, p_gaps in test_cases:
-            result = calculate_series_permeance(pt=pt, p_gapd=p_gapd, p_gaps=p_gaps)
+            result = calculate_effective_permeance(pt=pt, p_gapd=p_gapd, p_gaps=p_gaps)
             assert result > 0
 
-    def test_series_permeance_less_than_smallest(self):
-        """Test that series permeance is always less than the smallest component."""
+    def test_effective_permeance_less_than_smallest(self):
+        """Test that effective permeance is always less than the smallest component."""
         pt = 1e-7
         p_gapd = 5e-8
         p_gaps = 2e-8
         
-        result = calculate_series_permeance(pt=pt, p_gapd=p_gapd, p_gaps=p_gaps)
+        result = calculate_effective_permeance(pt=pt, p_gapd=p_gapd, p_gaps=p_gaps)
         
         # Series combination must be less than smallest component
         min_component = min(pt, p_gapd, p_gaps)
         assert result < min_component
 
-    def test_series_permeance_raises_for_zero_pt(self):
+    def test_effective_permeance_raises_for_zero_pt(self):
         """Test that ValueError is raised when pt = 0."""
         with pytest.raises(ValueError, match="All permeances must be positive"):
-            calculate_series_permeance(pt=0, p_gapd=1e-8, p_gaps=1e-8)
+            calculate_effective_permeance(pt=0, p_gapd=1e-8, p_gaps=1e-8)
 
-    def test_series_permeance_raises_for_zero_p_gapd(self):
+    def test_effective_permeance_raises_for_zero_p_gapd(self):
         """Test that ValueError is raised when p_gapd = 0."""
         with pytest.raises(ValueError, match="All permeances must be positive"):
-            calculate_series_permeance(pt=1e-8, p_gapd=0, p_gaps=1e-8)
+            calculate_effective_permeance(pt=1e-8, p_gapd=0, p_gaps=1e-8)
 
-    def test_series_permeance_raises_for_zero_p_gaps(self):
+    def test_effective_permeance_raises_for_zero_p_gaps(self):
         """Test that ValueError is raised when p_gaps = 0."""
         with pytest.raises(ValueError, match="All permeances must be positive"):
-            calculate_series_permeance(pt=1e-8, p_gapd=1e-8, p_gaps=0)
+            calculate_effective_permeance(pt=1e-8, p_gapd=1e-8, p_gaps=0)
 
-    def test_series_permeance_raises_for_negative_pt(self):
+    def test_effective_permeance_raises_for_negative_pt(self):
         """Test that ValueError is raised when pt < 0."""
         with pytest.raises(ValueError, match="All permeances must be positive"):
-            calculate_series_permeance(pt=-1e-8, p_gapd=1e-8, p_gaps=1e-8)
+            calculate_effective_permeance(pt=-1e-8, p_gapd=1e-8, p_gaps=1e-8)
 
-    def test_series_permeance_raises_for_negative_p_gapd(self):
+    def test_effective_permeance_raises_for_negative_p_gapd(self):
         """Test that ValueError is raised when p_gapd < 0."""
         with pytest.raises(ValueError, match="All permeances must be positive"):
-            calculate_series_permeance(pt=1e-8, p_gapd=-1e-8, p_gaps=1e-8)
+            calculate_effective_permeance(pt=1e-8, p_gapd=-1e-8, p_gaps=1e-8)
 
-    def test_series_permeance_raises_for_negative_p_gaps(self):
+    def test_effective_permeance_raises_for_negative_p_gaps(self):
         """Test that ValueError is raised when p_gaps < 0."""
         with pytest.raises(ValueError, match="All permeances must be positive"):
-            calculate_series_permeance(pt=1e-8, p_gapd=1e-8, p_gaps=-1e-8)
+            calculate_effective_permeance(pt=1e-8, p_gapd=1e-8, p_gaps=-1e-8)
 
     @pytest.mark.parametrize(
         "pt,p_gapd,p_gaps",
@@ -417,22 +417,22 @@ class TestSeriesPermeance:
             (1.9e-7, 4.5e-9, 3.2e-9),
         ],
     )
-    def test_series_permeance_parametric(self, pt, p_gapd, p_gaps):
-        """Test series permeance calculation with various parameter combinations."""
-        result = calculate_series_permeance(pt=pt, p_gapd=p_gapd, p_gaps=p_gaps)
+    def test_effective_permeance_parametric(self, pt, p_gapd, p_gaps):
+        """Test effective permeance calculation with various parameter combinations."""
+        result = calculate_effective_permeance(pt=pt, p_gapd=p_gapd, p_gaps=p_gaps)
         
         # Verify result is positive and less than smallest component
         assert result > 0
         assert result < min(pt, p_gapd, p_gaps)
         assert math.isfinite(result)
 
-    def test_series_permeance_formula_verification(self):
+    def test_effective_permeance_formula_verification(self):
         """Verify the mathematical formula: P = 1/(1/Pt + 1/P_gapd + 1/P_gaps)."""
         pt = 1.5e-7
         p_gapd = 8e-9
         p_gaps = 6e-9
         
-        result = calculate_series_permeance(pt=pt, p_gapd=p_gapd, p_gaps=p_gaps)
+        result = calculate_effective_permeance(pt=pt, p_gapd=p_gapd, p_gaps=p_gaps)
         
         # Direct formula calculation
         expected = 1.0 / ((1.0/pt) + (1.0/p_gapd) + (1.0/p_gaps))
@@ -457,7 +457,7 @@ class TestEquivalentPermeance:
         """Test with realistic magnetoelastic sensor permeance values."""
         pt, p3 = calculate_target_permeance()
         p_gaps, p_gapd = calculate_air_gap_permeance()
-        p = calculate_series_permeance(pt=pt, p_gapd=p_gapd, p_gaps=p_gaps)
+        p = calculate_effective_permeance(pt=pt, p_gapd=p_gapd, p_gaps=p_gaps)
 
         model = CorePermeanceModel()
         p_core = model.calculate_core_permeance()

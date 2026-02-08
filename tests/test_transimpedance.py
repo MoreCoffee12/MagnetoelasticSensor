@@ -8,6 +8,10 @@ calculations in magnetoelastic sensor circuits.
 import math
 import cmath
 import pytest
+from magnetoelasticsensor.air_gap_permeance import calculate_air_gap_permeance
+from magnetoelasticsensor.cross_leakage_permeance import CrossLeakagePermeanceModel
+from magnetoelasticsensor.geometry import DEFAULT_SENSOR_GEOMETRY
+from magnetoelasticsensor.permeance import calculate_effective_permeance
 from magnetoelasticsensor.transimpedance import (
     calculate_normalized_impedance,
     calculate_transimpedance,
@@ -47,16 +51,25 @@ class TestNormalizedImpedance:
     def test_normalized_impedance_default_values(self):
         """Test with default magnetoelastic sensor values."""
         model = TargetPermeanceModel()
-        Pt,p3 = model.calculate_target_permeance()
-        
-        p_sd = 2.3e-8  # ~23 nH cross-leakage
-        p = 2.5e-8  # ~25 nH effective permeance
-        epsilon = 0.05  # Small damping factor
-        
+        pt,p3 = model.calculate_target_permeance()
+        p_gaps, p_gapd = calculate_air_gap_permeance()
+        p = calculate_effective_permeance(pt=pt, p_gapd=p_gapd, p_gaps=p_gaps)    
+
+        model = CrossLeakagePermeanceModel()
+        p_sd = model.calculate_cross_leakage_permeance()
+        epsilon = math.tan(math.radians(DEFAULT_SENSOR_GEOMETRY.theta3_deg.nominal))  
+
+        # Call the function under test        
         z = calculate_normalized_impedance(p3=p3, p_sd=p_sd, p=p, epsilon=epsilon)
-        
+
+        # Low-level sanity checks on the output
         assert isinstance(z, complex)
         assert math.isfinite(abs(z))
+
+        # Copied over from "Calculate the normalized impedance" section in "UncertaintyChain.nb" notebook
+        z_expected = complex(0.32936430169468783, -0.01725711423759577)  
+        
+        assert cmath.isclose(z, z_expected, rel_tol=1e-8)
 
     def test_normalized_impedance_raises_for_zero_p3(self):
         """Test that ValueError is raised for zero target permeance."""

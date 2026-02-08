@@ -106,7 +106,7 @@ class CorePermeanceModel:
         Pdeddy = (16*math.pi*rho)/(dimsphi*omega)
         assert Pdeddy > 0, "Drive pole eddy current permeance must be greater than zero."
 
-        # Sum the series permeance to estimate the core total permeance
+        # Sum the effective permeance to estimate the core total permeance
         # (does not include target permeability or stress effects yet)
         permeance = 1.0 / (1 / Pbr + 1 / Pbreddy + 1 / Ps + 1 / Pseddy
                             + 1 / Pd + 1 / Pdeddy)   

@@ -166,13 +166,13 @@ def cross_leakage_u_parameter(
     return u
 
 
-def calculate_series_permeance(
+def calculate_effective_permeance(
     pt: float,
     p_gapd: float,
     p_gaps: float
 ) -> float:
     """
-    Calculate the combined permeance of three magnetic circuit elements in series.
+    Calculate the effective permeance of three magnetic circuit elements in series.
     
     For permeances (or reluctances) in series, the reciprocals add:
         1/P_total = 1/Pt + 1/P_gapd + 1/P_gaps
@@ -196,7 +196,7 @@ def calculate_series_permeance(
     Returns
     -------
     float
-        Combined series permeance [H].
+        Effective permeance [H].
     
     Raises
     ------
