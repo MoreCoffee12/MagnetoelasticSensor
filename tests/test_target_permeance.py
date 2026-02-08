@@ -34,6 +34,8 @@ class TestTargetPermeanceModel:
             dim_sph_drive=DimensionalParameter(nominal=16e-3, tolerance=0.1e-3),
             dim_sp=DimensionalParameter(nominal=5e-3, tolerance=0.04e-3),
             dim_sph_sense=DimensionalParameter(nominal=16e-3, tolerance=0.1e-3),
+            ndrive=DimensionalParameter(nominal=800.0, tolerance=0.0),
+            nsense=DimensionalParameter(nominal=60.0, tolerance=0.0),
             dim_spaw=DimensionalParameter(nominal=5e-3, tolerance=0.1e-3),
             dim_spah=DimensionalParameter(nominal=5e-3, tolerance=0.1e-3),
             dim_spac=DimensionalParameter(nominal=17e-3, tolerance=0.1e-3),
@@ -43,6 +45,7 @@ class TestTargetPermeanceModel:
             rho=DimensionalParameter(nominal=1e-6, tolerance=0.0),
             murt=DimensionalParameter(nominal=2000.0, tolerance=0.0),
             omega=DimensionalParameter(nominal=2*math.pi*1e3, tolerance=0.0),
+            theta3_deg=DimensionalParameter(nominal=45.0, tolerance=0.0),
             avg_gap=DimensionalParameter(nominal=1.143e-3, tolerance=1e-5),
             sigmac=DimensionalParameter(nominal=100/22, tolerance=5/22),
         )
@@ -201,6 +204,8 @@ class TestTargetPermeanceFunctional:
             dim_sph_drive=DimensionalParameter(nominal=16e-3, tolerance=0.1e-3),
             dim_sp=DimensionalParameter(nominal=5e-3, tolerance=0.04e-3),
             dim_sph_sense=DimensionalParameter(nominal=16e-3, tolerance=0.1e-3),
+            ndrive=DimensionalParameter(nominal=800.0, tolerance=0.0),
+            nsense=DimensionalParameter(nominal=60.0, tolerance=0.0),
             dim_spaw=DimensionalParameter(nominal=5e-3, tolerance=0.1e-3),
             dim_spah=DimensionalParameter(nominal=5e-3, tolerance=0.1e-3),
             dim_spac=DimensionalParameter(nominal=17e-3, tolerance=0.1e-3),
@@ -210,6 +215,7 @@ class TestTargetPermeanceFunctional:
             rho=DimensionalParameter(nominal=1e-6, tolerance=0.0),
             murt=DimensionalParameter(nominal=2000.0, tolerance=0.0),
             omega=DimensionalParameter(nominal=2*math.pi*1e3, tolerance=0.0),
+            theta3_deg=DimensionalParameter(nominal=45.0, tolerance=0.0),
             avg_gap=DimensionalParameter(nominal=1.143e-3, tolerance=1e-5),
             sigmac=DimensionalParameter(nominal=100/22, tolerance=5/22),
         )

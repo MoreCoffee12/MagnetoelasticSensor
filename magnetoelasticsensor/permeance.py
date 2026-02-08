@@ -218,5 +218,55 @@ def calculate_series_permeance(
     return 1.0 / reciprocal_sum
 
 
+def calculate_equivalent_permeance(
+    p_core: float,
+    p: float,
+    p_sd: float
+) -> float:
+    """
+    Calculate the equivalent permeance for a four-branch magnetoelastic sensor.
+    
+    This equation represents the combined permeance of a magnetic circuit with
+    core permeance (P_core) in series with three parallel branches, where each
+    branch has permeance P in series with cross-leakage permeance P_sd.
+    
+    Original form:
+        P_eq = 1 / (1/P_core + 3/(P*(1/P + 3/P_sd)*P_sd))
+    
+    Parameters
+    ----------
+    p_core : float
+        Core permeance [H].
+    p : float
+        Branch permeance [H] (typically air gap or target permeance).
+    p_sd : float
+        Cross-leakage permeance [H] between sense and drive branches.
+    
+    Returns
+    -------
+    float
+        Equivalent circuit permeance [H].
+    
+    Raises
+    ------
+    ValueError
+        If any permeance is zero or negative.
+    
+    Notes
+    -----
+    The factor of 3 appears because the four-branch sensor has three parallel
+    flux paths contributing to the coupling between drive and sense coils.
+    
+    The expression (P_sd + 3*P) represents the combined reluctance of the
+    parallel branch network.
+    """
+    if p_core <= 0 or p <= 0 or p_sd <= 0:
+        raise ValueError(
+            f"All permeances must be positive: p_core={p_core}, p={p}, p_sd={p_sd}"
+        )
+    
+    return 1/(1/p_core + 3/(p*(1/p + 3/p_sd)*p_sd))
+
+
 
 

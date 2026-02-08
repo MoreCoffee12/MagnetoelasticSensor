@@ -61,6 +61,10 @@ class SensorGeometry:
     # Sense pole (secondary coil connection)
     dim_sp: DimensionalParameter  # Sense pole diameter [m]
     dim_sph_sense: DimensionalParameter  # Sense pole height [m]
+
+    # Coil turns
+    ndrive: DimensionalParameter  # Number of turns on drive coil [dimensionless]
+    nsense: DimensionalParameter  # Number of turns on sense coil [dimensionless]
     
     # Bridge / Pole arm (ferrite structure connecting poles)
     dim_spaw: DimensionalParameter  # Rectangular Bridge width [m]
@@ -81,6 +85,9 @@ class SensorGeometry:
 
     # Operating frequency (for eddy current calculations)
     omega: DimensionalParameter  # Angular frequency [rad/s]
+
+    # Target geometric parameter
+    theta3_deg: DimensionalParameter  # Angle parameter for target geometry [degrees]
 
     # Target conductivity
     sigmac: DimensionalParameter  # Electrical conductivity of target material [S/m]
@@ -117,6 +124,16 @@ DEFAULT_SENSOR_GEOMETRY = SensorGeometry(
     dim_sph_sense=DimensionalParameter(
         nominal=15.0e-3,
         tolerance=0.08e-3
+    ),
+
+    # Coil turns
+    ndrive=DimensionalParameter(
+        nominal=800.0,  # Number of turns on drive coil [dimensionless]
+        tolerance=0.0
+    ),
+    nsense=DimensionalParameter(
+        nominal=60.0,  # Number of turns on sense coil [dimensionless]
+        tolerance=0.0
     ),
     
     # Bridge/pole arm: width 4.50mm ± 0.08mm, height 4.25mm ± 0.08mm, length 16.0mm ± 0.08mm
@@ -176,6 +193,13 @@ DEFAULT_SENSOR_GEOMETRY = SensorGeometry(
     omega=DimensionalParameter(
         nominal=2 * math.pi * 50000.0,  # 50 kHz operating frequency
         tolerance=0.0  # No tolerance, user-defined parameter
+    ),
+
+    # Target geometric parameter - angle for target geometry. Fleming says this ranges from
+    # 45 degrees at low saturation to 26.6 degrees at high saturation.
+    theta3_deg=DimensionalParameter(
+        nominal=45.0,  # 45 degrees [degrees]
+        tolerance=0.0  # Fixed design parameter, no tolerance
     ),
 
     # Average gap distance between poles and target surface - research definition
