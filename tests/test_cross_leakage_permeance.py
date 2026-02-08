@@ -70,9 +70,6 @@ class TestCrossLeakagePermeanceModel:
         model = CrossLeakagePermeanceModel()
         permeance = model.calculate_cross_leakage_permeance(
             muo=4e-7*math.pi,
-            mur=1500.0,
-            rho=2e-6,
-            omega=2*math.pi*2e3,
         )
         
         assert permeance > 0
@@ -114,30 +111,5 @@ class TestCrossLeakagePermeanceFunctional:
         assert permeance > 0
 
 
-class TestCrossLeakageIntegration:
-    """Integration tests combining geometry and cross-leakage calculations."""
 
-    @pytest.mark.parametrize(
-        "mur",
-        [100.0, 500.0, 1000.0, 2000.0, 5000.0],
-    )
-    def test_permeance_variation_with_material(self, mur):
-        """Test cross-leakage permeance varies with core material properties."""
-        model = CrossLeakagePermeanceModel()
-        permeance = model.calculate_cross_leakage_permeance(mur=mur)
-        
-        assert permeance > 0
-        assert isinstance(permeance, float)
-
-    @pytest.mark.parametrize(
-        "omega",
-        [f * 2 * math.pi for f in [1000, 5000, 10000, 20000, 50000, 100000]],
-    )
-    def test_permeance_variation_with_frequency(self, omega):
-        """Test cross-leakage permeance decreases with frequency."""
-        model = CrossLeakagePermeanceModel()
-        permeance = model.calculate_cross_leakage_permeance(omega=omega)
-        
-        assert permeance > 0
-        assert isinstance(permeance, float)
 

@@ -10,7 +10,6 @@ The cross-leakage permeance accounts for:
 - Flux paths between poles that bypass the target material
 - Ferrite core geometry and magnetic properties
 - Pole-to-pole spacing and orientation
-- Core material permeability at operating frequency
 
 References: 
 
@@ -43,11 +42,9 @@ class CrossLeakagePermeanceModel:
     
     The cross-leakage permeance depends on:
     - Ferrite core geometry (pole spacing, bridge dimensions)
-    - Core material permeability (μᵣ) and resistivity (ρ)
     - Core cross-sectional area available for leakage
     
     Physical interpretation:
-    - Higher core permeability → higher leakage (direct coupling)
     - Larger pole spacing → lower leakage (longer flux path)
     - Larger core cross-section → higher leakage (more flux capacity)
     
@@ -76,8 +73,6 @@ class CrossLeakagePermeanceModel:
         self,
         *,
         muo: float | None = None,
-        mur: float | None = None,
-        rho: float | None = None,
     ) -> float:
         """
         Calculate cross-leakage magnetic permeance.
@@ -94,13 +89,6 @@ class CrossLeakagePermeanceModel:
         ----------
         muo : float, optional
             Vacuum permeability override [H/m]. If None, uses geometry.muo.
-        mur : float, optional
-            Core relative permeability override (dimensionless).
-            If None, uses geometry.mur.
-        rho : float, optional
-            Core material resistivity override [Ω·m].
-            If None, uses geometry.rho. Higher resistivity increases leakage.
-        
         Returns
         -------
         float
@@ -108,7 +96,6 @@ class CrossLeakagePermeanceModel:
         """
         # Use provided overrides or defaults
         muo = self.geometry.muo.nominal if muo is None else muo
-        rho = self.geometry.rho.nominal if rho is None else rho
         
         # Extract core geometry (nominal values)
         dim_spaw = self.geometry.dim_spaw.nominal  # Bridge width [m]
@@ -122,7 +109,6 @@ class CrossLeakagePermeanceModel:
         
         # Basic sanity checks
         assert muo > 0, "Vacuum permeability must be greater than zero."
-        assert rho > 0, "Core resistivity must be greater than zero."
         assert dim_spaw > 0, "Bridge width must be greater than zero."
         assert dimspahi > 0, "Bridge height must be greater than zero."
         assert dim_spac > 0, "Pole spacing must be greater than zero."
