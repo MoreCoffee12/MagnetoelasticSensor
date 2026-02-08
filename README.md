@@ -6,7 +6,7 @@ Python libraries used to model magnetoelastic (inverse magnetostrictive) sensors
 
 You already know about these sensors and want to get the code? Here’s an index and sample programs to get you started:
 
--   HelloWorld.ipynb – Excercises all the functions and estimates sensor response over gap and torque.
+- [HelloWorld.ipynb](https://github.com/MoreCoffee12/MagnetoelasticSensor/blob/main/notebooks/HelloWorld.ipynb) – Excercises all the functions and estimates sensor response over gap and torque.
 
 # What is a magnetoelastic sensor?
 
