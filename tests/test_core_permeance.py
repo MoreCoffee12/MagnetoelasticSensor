@@ -86,6 +86,7 @@ class TestSensorGeometry:
             rho=DimensionalParameter(nominal=1e-6, tolerance=0.0),
             murt=DimensionalParameter(nominal=2000.0, tolerance=0.0),
             omega=DimensionalParameter(nominal=2*math.pi*1e3, tolerance=0.0),
+            avg_gap=DimensionalParameter(nominal=1.143e-3, tolerance=1e-5),
         )
         
         assert custom_geom.dim_dp.nominal == 10e-3
@@ -127,6 +128,7 @@ class TestCorePermeanceModel:
             rho=DimensionalParameter(nominal=1e-6, tolerance=0.0),
             murt=DimensionalParameter(nominal=2000.0, tolerance=0.0),
             omega=DimensionalParameter(nominal=2*math.pi*1e3, tolerance=0.0),
+            avg_gap=DimensionalParameter(nominal=1.143e-3, tolerance=1e-5),
 
         )
         
@@ -169,6 +171,7 @@ class TestCorePermeanceFunctional:
             rho=DimensionalParameter(nominal=1e-6, tolerance=0.0),
             murt=DimensionalParameter(nominal=2000.0, tolerance=0.0),
             omega=DimensionalParameter(nominal=2*math.pi*1e3, tolerance=0.0),
+            avg_gap=DimensionalParameter(nominal=1.143e-3, tolerance=1e-5),
         )
         
         permeance = CorePermeanceModel(geometry=custom_geom).calculate_core_permeance()

@@ -56,15 +56,15 @@ class SensorGeometry:
     
     # Drive pole (primary coil connection)
     dim_dp: DimensionalParameter  # Drive pole diameter
-    dim_sph_drive: DimensionalParameter  # Drive pole height
+    dim_sph_drive: DimensionalParameter  # Drive pole height [mm]
     
     # Sense pole (secondary coil connection)
-    dim_sp: DimensionalParameter  # Sense pole diameter
-    dim_sph_sense: DimensionalParameter  # Sense pole height
+    dim_sp: DimensionalParameter  # Sense pole diameter [mm]
+    dim_sph_sense: DimensionalParameter  # Sense pole height [mm]
     
     # Bridge / Pole arm (ferrite structure connecting poles)
-    dim_spaw: DimensionalParameter  # Bridge width
-    dim_spah: DimensionalParameter  # Bridge height
+    dim_spaw: DimensionalParameter  # Bridge width [mm]
+    dim_spah: DimensionalParameter  # Bridge height [mm]
     dim_spac: DimensionalParameter  # Bridge length (distance between pole centers)
 
     # Core magnetic properties (not geometric but included for completeness)
@@ -76,7 +76,8 @@ class SensorGeometry:
     murt: DimensionalParameter  # Relative permeability of target material (dimensionless)
     
     # Gap/spacing
-    dim_spag: DimensionalParameter  # Distance between poles (air gap)
+    dim_spag: DimensionalParameter  # Distance between poles 
+    avg_gap: DimensionalParameter  # Average gap distance between poles and target surface [mm]  
 
     # Operating frequency (for eddy current calculations)
     omega: DimensionalParameter  # Angular frequency [rad/s]
@@ -173,5 +174,11 @@ DEFAULT_SENSOR_GEOMETRY = SensorGeometry(
         nominal=2 * math.pi * 50000.0,  # 50 kHz operating frequency
         tolerance=0.0  # No tolerance, user-defined parameter
     ),
+
+    # Average gap distance between poles and target surface - research definition
+    avg_gap=DimensionalParameter(
+        nominal=1.143/1000,  # Average gap distance [m]
+        tolerance=1.0/100000  # What you get with plastic feeler gauges
+    ),  
 
 )
