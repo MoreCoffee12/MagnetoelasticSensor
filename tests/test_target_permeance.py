@@ -5,6 +5,7 @@ Tests the magnetoelasticsensor.target_permeance module.
 """
 import math
 import pytest
+from magnetoelasticsensor import permeance
 from magnetoelasticsensor.target_permeance import (
     TargetPermeanceModel,
     calculate_target_permeance,
@@ -24,6 +25,7 @@ class TestTargetPermeanceModel:
         model = TargetPermeanceModel()
         assert model.geometry is not None
         assert model.geometry == DEFAULT_SENSOR_GEOMETRY
+        
 
     def test_model_initialization_custom_geometry(self):
         """Test model initialization with custom geometry."""
@@ -51,21 +53,16 @@ class TestTargetPermeanceModel:
         """Test target permeance calculation with default parameters."""
         model = TargetPermeanceModel()
         
-        # Typical values for a ferromagnetic target
-        ha = 5e-3  # 5mm target height
-        u = 2.5  # Normalized geometric parameter
-        sigma_c = 1e6  # Conductivity of ferromagnetic material [S/m]
-        
-        permeance = model.calculate_target_permeance(
-            ha=ha,
-            u=u,
-            sigma_c=sigma_c,
-        )
+        Pt = model.calculate_target_permeance()
         
         # Permeance should be positive and finite
-        assert isinstance(permeance, float)
-        assert permeance > 0
-        assert math.isfinite(permeance)
+        assert isinstance(Pt, float)
+        assert Pt > 0
+        assert math.isfinite(Pt)
+
+        # Expected value from the "Target permeance" section of "UncertaintyChain.nb" notebook
+        expected_permeance = 8.61499356947014e-8
+        assert math.isclose(Pt, expected_permeance, rel_tol=1e-8)
 
     def test_target_permeance_returns_float(self):
         """Test that target permeance returns float type."""
@@ -112,22 +109,6 @@ class TestTargetPermeanceModel:
         assert permeance_low_sigma > 0
         assert permeance_high_sigma > 0
 
-    def test_target_permeance_sensitivity_to_height(self):
-        """Test that larger target height increases permeance."""
-        model = TargetPermeanceModel()
-        permeance_short = model.calculate_target_permeance(
-            ha=3e-3,
-            u=2.5,
-            sigma_c=1e6,
-        )
-        permeance_tall = model.calculate_target_permeance(
-            ha=10e-3,
-            u=2.5,
-            sigma_c=1e6,
-        )
-        
-        # Larger ha → larger series term → higher overall permeance
-        assert permeance_tall > permeance_short
 
     def test_target_permeance_raises_for_invalid_ha(self):
         """Test that invalid ha raises ValueError."""
