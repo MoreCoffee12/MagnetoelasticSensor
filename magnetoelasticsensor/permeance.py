@@ -166,5 +166,57 @@ def cross_leakage_u_parameter(
     return u
 
 
+def calculate_series_permeance(
+    pt: float,
+    p_gapd: float,
+    p_gaps: float
+) -> float:
+    """
+    Calculate the combined permeance of three magnetic circuit elements in series.
+    
+    For permeances (or reluctances) in series, the reciprocals add:
+        1/P_total = 1/Pt + 1/P_gapd + 1/P_gaps
+    
+    Therefore:
+        P_total = 1 / (1/Pt + 1/P_gapd + 1/P_gaps)
+    
+    This represents the effective permeance of a magnetic circuit where flux
+    must pass sequentially through the target (Pt), drive gap (P_gapd), and
+    sense gap (P_gaps) elements.
+    
+    Parameters
+    ----------
+    pt : float
+        Target permeance [H].
+    p_gapd : float
+        Drive gap permeance [H].
+    p_gaps : float
+        Sense gap permeance [H].
+    
+    Returns
+    -------
+    float
+        Combined series permeance [H].
+    
+    Raises
+    ------
+    ValueError
+        If any permeance is zero or negative.
+    
+    Notes
+    -----
+    This equation is analogous to resistors in series (R_total = R1 + R2 + R3)
+    but applied to magnetic reluctance. Since permeance P = 1/R (reluctance),
+    the reciprocals add in the same way.
+    """
+    if pt <= 0 or p_gapd <= 0 or p_gaps <= 0:
+        raise ValueError(
+            f"All permeances must be positive: pt={pt}, p_gapd={p_gapd}, p_gaps={p_gaps}"
+        )
+    
+    reciprocal_sum = (1.0 / pt) + (1.0 / p_gapd) + (1.0 / p_gaps)
+    return 1.0 / reciprocal_sum
+
+
 
 
