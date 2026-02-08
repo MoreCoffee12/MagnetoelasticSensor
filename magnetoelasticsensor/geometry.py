@@ -63,8 +63,8 @@ class SensorGeometry:
     dim_sph_sense: DimensionalParameter  # Sense pole height [m]
     
     # Bridge / Pole arm (ferrite structure connecting poles)
-    dim_spaw: DimensionalParameter  # Bridge width [m]
-    dim_spah: DimensionalParameter  # Bridge height [m]
+    dim_spaw: DimensionalParameter  # Rectangular Bridge width [m]
+    dim_spah: DimensionalParameter  # Rectangular Bridge height [m]
     dim_spac: DimensionalParameter  # Bridge length (distance between pole centers)
 
     # Core magnetic properties (not geometric but included for completeness)

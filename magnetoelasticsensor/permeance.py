@@ -11,6 +11,43 @@ import math
 MU_0 = 4 * math.pi * 1e-7  # Permeability of free space [H/m]
 
 
+def calculate_g2_parameter(gap_distance: float, pole_spacing: float) -> float:
+    """
+    Calculate the g2 geometric parameter for fringing field calculations.
+    
+    This parameter is used in both air gap permeance (for pole side fringing)
+    and cross-leakage permeance calculations. It represents a normalized
+    geometric characteristic of the pole spacing and gap configuration.
+    
+    From Fleming's derivation:
+        g2 = -gap_distance + pole_spacing / π
+    
+    Parameters
+    ----------
+    gap_distance : float
+        Average gap distance between pole face and target surface [m].
+    pole_spacing : float
+        Distance between poles [m].
+    
+    Returns
+    -------
+    float
+        The g2 geometric parameter [m].
+    
+    Notes
+    -----
+    This parameter appears in:
+    - Air gap pole side permeance calculations
+    - Cross-leakage permeance height corrections
+    
+    References
+    ----------
+    Fleming, W., "Magnetostrictive Torque Sensors — Derivation of Model," 
+    SAE Technical Paper 890482, 1989.
+    """
+    return -gap_distance + pole_spacing / math.pi
+
+
 def cross_leakage_gu(u: float) -> float:
     """
     Calculate normalized permeance coefficient for cross-leakage flux.
@@ -89,61 +126,5 @@ def cross_leakage_u_parameter(
     return u
 
 
-def cross_leakage_permeance(
-    dim_spagi: float,
-    dim_dp: float,
-    dim_spi: float,
-    dim_sphi: float,
-    dim_spahi: float,
-    g2: float
-) -> float:
-    """
-    Calculate cross-leakage flux permeance.
-    
-    From Fleming:
-        𝒫₁₂ = μ₀ * (h - g2) * g_u
-    
-    Where:
-        h = dim_sphi - dim_spahi
-        u = geometric parameter from cross_leakage_u_parameter()
-        g_u = normalized coefficient from cross_leakage_gu()
-    
-    Parameters
-    ----------
-    dim_spagi : float
-        Spagi dimension [m] - gap-related geometry.
-    dim_dp : float
-        Primary coil dimension [m].
-    dim_spi : float
-        Secondary coil dimension [m].
-    dim_sphi : float
-        Sphi dimension [m] - height-related geometry.
-    dim_spahi : float
-        Spahi dimension [m] - additional height offset.
-    g2 : float
-        Secondary gap parameter [m].
-    
-    Returns
-    -------
-    float
-        Cross-leakage permeance 𝒫₁₂ [H].
-    
-    Raises
-    ------
-    ValueError
-        If geometric constraints are violated (see cross_leakage_u_parameter).
-    """
-    # Calculate normalized geometric parameter
-    u = cross_leakage_u_parameter(dim_spagi, dim_dp, dim_spi)
-    
-    # Calculate normalized permeance coefficient
-    gu = cross_leakage_gu(u)
-    
-    # Calculate height difference
-    h = dim_sphi - dim_spahi
-    
-    # Calculate permeance: 𝒫₁₂ = μ₀ * (h - g2) * g_u
-    permeance = MU_0 * (h - g2) * gu
-    
-    return permeance
+
 

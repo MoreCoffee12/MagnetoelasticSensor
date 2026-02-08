@@ -19,6 +19,7 @@ B. Howard
 
 import math
 from magnetoelasticsensor.geometry import SensorGeometry, DEFAULT_SENSOR_GEOMETRY
+from magnetoelasticsensor.permeance import calculate_g2_parameter
 
 
 class AirGapPermeanceModel:
@@ -212,7 +213,7 @@ def calculate_pole_side_permeance(
     float
         Pole side permeance contribution [H].
     """
-    g2 = -gap_distance + pole_spacing / math.pi
+    g2 = calculate_g2_parameter(gap_distance, pole_spacing)
     term = pole_diameter / 2.0 + math.sqrt(gap_distance * (gap_distance + g2))
     return 4.0 * term * vacuum_permeability * math.log(1.0 + g2 / gap_distance)
 
