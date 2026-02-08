@@ -98,20 +98,22 @@ class TargetPermeanceModel:
 
         # Permeance associated with main mutual flux passing through the target.
         delta = calculate_skin_depth(muo=muo, mur=murt, omega=omega, sigma_c=sigma_c)
-
         pt = (2*math.pi*delta*muo*murt)/math.log(u + math.sqrt(-1 + u**2))
         if pt <= 0 :
             raise ValueError("Computed permeance terms must be positive")
+        
+        # Peremances associated with the eddy-current flux in the target.
+        P3 = 1/(1/pt + 1/(ha*muo*u));        
 
-        return pt
+        return [pt, P3]
 
 
 def calculate_target_permeance(
     *,
     geometry: SensorGeometry = None,
-    ha: float,
-    u: float,
-    sigma_c: float,
+    ha: float | None = None,
+    u: float | None = None,
+    sigma_c: float | None = None,
     muo: float | None = None,
     murt: float | None = None,
     omega: float | None = None,
@@ -123,11 +125,11 @@ def calculate_target_permeance(
     ----------
     geometry : SensorGeometry, optional
         Sensor geometry. If None, uses DEFAULT_SENSOR_GEOMETRY.
-    ha : float
+    ha : float | None, optional
         Effective target height [m].
-    u : float
+    u : float | None, optional
         Normalized geometric parameter (dimensionless).
-    sigma_c : float
+    sigma_c : float | None, optional
         Target electrical conductivity [S/m].
     muo : float, optional
         Vacuum permeability override [H/m]. If None, uses geometry.muo.

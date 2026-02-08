@@ -56,13 +56,16 @@ class TestTargetPermeanceModel:
         Pt = model.calculate_target_permeance()
         
         # Permeance should be positive and finite
-        assert isinstance(Pt, float)
-        assert Pt > 0
-        assert math.isfinite(Pt)
+        assert isinstance(Pt[0], float)
+        assert Pt[0] > 0
+        assert math.isfinite(Pt[0])
 
         # Expected value from the "Target permeance" section of "UncertaintyChain.nb" notebook
         expected_permeance = 8.61499356947014e-8
-        assert math.isclose(Pt, expected_permeance, rel_tol=1e-8)
+        assert math.isclose(Pt[0], expected_permeance, rel_tol=1e-8)
+        expected_permeance = 4.459077766957076e-10
+        assert math.isclose(Pt[1], expected_permeance, rel_tol=1e-8)
+
 
     def test_target_permeance_returns_float(self):
         """Test that target permeance returns float type."""
@@ -73,7 +76,7 @@ class TestTargetPermeanceModel:
             sigma_c=1e6,
         )
         
-        assert isinstance(permeance, float)
+        assert isinstance(permeance[0], float)
 
     def test_target_permeance_with_parameter_overrides(self):
         """Test target permeance calculation with parameter overrides."""
@@ -87,8 +90,8 @@ class TestTargetPermeanceModel:
             omega=2*math.pi*50e3,
         )
         
-        assert permeance > 0
-        assert isinstance(permeance, float)
+        assert permeance[0] > 0
+        assert isinstance(permeance[0], float)
 
     def test_target_permeance_sensitivity_to_conductivity(self):
         """Test that higher conductivity increases target permeance."""
@@ -106,8 +109,8 @@ class TestTargetPermeanceModel:
         
         # Higher conductivity → lower skin depth → higher permeance
         # in the Pt branch; overall effect depends on series combination
-        assert permeance_low_sigma > 0
-        assert permeance_high_sigma > 0
+        assert permeance_low_sigma[0] > 0
+        assert permeance_high_sigma[0] > 0
 
 
     def test_target_permeance_raises_for_invalid_ha(self):
@@ -188,8 +191,8 @@ class TestTargetPermeanceFunctional:
             sigma_c=1e6,
         )
         
-        assert permeance > 0
-        assert isinstance(permeance, float)
+        assert permeance[0] > 0
+        assert isinstance(permeance[0], float)
 
     def test_convenience_function_with_custom_geometry(self):
         """Test convenience function with custom geometry."""
@@ -218,8 +221,8 @@ class TestTargetPermeanceFunctional:
             sigma_c=1e6,
         )
         
-        assert permeance > 0
-        assert isinstance(permeance, float)
+        assert permeance[0] > 0
+        assert isinstance(permeance[0], float)
 
     def test_convenience_function_with_overrides(self):
         """Test convenience function with parameter overrides."""
@@ -232,8 +235,8 @@ class TestTargetPermeanceFunctional:
             omega=2*math.pi*100e3,
         )
         
-        assert permeance > 0
-        assert isinstance(permeance, float)
+        assert permeance[0] > 0
+        assert isinstance(permeance[0], float)
 
 
 class TestTargetPermeanceIntegration:
@@ -252,8 +255,8 @@ class TestTargetPermeanceIntegration:
             sigma_c=1e6,
         )
         
-        assert permeance > 0
-        assert isinstance(permeance, float)
+        assert permeance[0] > 0
+        assert isinstance(permeance[0], float)
 
     @pytest.mark.parametrize(
         "u",
@@ -268,8 +271,8 @@ class TestTargetPermeanceIntegration:
             sigma_c=1e6,
         )
         
-        assert permeance > 0
-        assert isinstance(permeance, float)
+        assert permeance[0] > 0
+        assert isinstance(permeance[0], float)
 
     @pytest.mark.parametrize(
         "sigma_c",
@@ -284,5 +287,5 @@ class TestTargetPermeanceIntegration:
             sigma_c=sigma_c,
         )
         
-        assert permeance > 0
-        assert isinstance(permeance, float)
+        assert permeance[0] > 0
+        assert isinstance(permeance[0], float)
