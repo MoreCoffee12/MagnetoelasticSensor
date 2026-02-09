@@ -71,7 +71,7 @@ class TestNormalizedImpedance:
         assert math.isfinite(abs(z))
 
         # Copied over from "Calculate the normalized impedance" section in "ModelAndUncertainty.nb" notebook
-        z_expected = complex(0.32936430169468783, -0.01725711423759577)  
+        z_expected = complex(0.7139053089702699, -0.09919715300310798)  
         
         assert cmath.isclose(z, z_expected, rel_tol=1e-8)
 
@@ -213,7 +213,7 @@ class TestTransimpedance:
 
         # Copied over from "Final transimpedance and phase angle" section 
         # in "ModelAndUncertainty.nb" notebook
-        z_expected = complex(1.0367383762826108, 19.786889432562443)
+        z_expected = complex(3.851982702131939, 27.72207485659873)
         assert cmath.isclose(z, z_expected, rel_tol=1e-8)
 
     def test_transimpedance_raises_for_zero_turns(self):

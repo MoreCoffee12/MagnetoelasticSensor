@@ -162,7 +162,7 @@ DEFAULT_SENSOR_GEOMETRY = SensorGeometry(
         tolerance=0.0  # Physical constant, no tolerance
     ),
 
-    #Permeability of core material (ferrite) - nominal value from datasheet, tolerance estimated
+    # Permeability of core material (ferrite) - nominal value from datasheet, tolerance estimated
     # “97 Material Data Sheet - Fair-Rite.” Fair-Rite 97 
     # Material Data Sheet, Fair-rite, 26 Apr. 2023, 
     # fair-rite.com/97-material-data-sheet/.
@@ -181,11 +181,27 @@ DEFAULT_SENSOR_GEOMETRY = SensorGeometry(
     ),
 
     # Permeability of target material (ferromagnetic)  
-    # Jiles, David. Introduction to Magnetism and Magnetic 
-    # Materials. 3rd ed., Springer Boston, MA, 2016.
+    # - Jiles, David. Introduction to Magnetism and Magnetic 
+    #   Materials. 3rd ed., Springer Boston, MA, 2016.
+    # - Rose, J.H., Uzal, E., Moulder, J.C. (1995). Magnetic Permeability 
+    #   and Eddy-Current Measurements. In: Thompson, D.O., Chimenti, D.E. 
+    #   (eds) Review of Progress in Quantitative Nondestructive Evaluation. 
+    #   Springer, Boston, MA. https://doi.org/10.1007/978-1-4615-1987-4_36.
+    # - Jiles, D.C. (1988), Variation of the magnetic properties of AISI 
+    #   4140 steels with plastic strain. phys. stat. sol. (a), 108: 
+    #   417-429. https://doi.org/10.1002/pssa.2211080144.
+    # - Hristoforou, E., A. Ktena, P. Vourna, and K. Argiris. “Dependence 
+    #   of Magnetic Permeability on Residual Stresses in Alloyed Steels.” 
+    #   *AIP Advances*, vol. 8, no. 4, 2018, article 047201,
+    #    https://doi.org/10.1063/1.4994202.
+    # Findings:
+    #  Most probably 4140 and 4340 steel have a relative permeability in
+    #  the range of 55 to 65 at zero stress and room temperatures.
+    #  Using Figure 4 in Hristoforou et. al., likely a 10% change
+    #  in permeability with 100 MPa of applied stress. 
     murt=DimensionalParameter(
-        nominal=1000.0,  # Room temp, zero stress
-        tolerance= 10.0 # Estimated, actual value will depend on target material and stress state  
+        nominal=60.0,  # Room temp, zero stress
+        tolerance= 1.0 # Estimated, actual value will depend on target material and stress state  
     ),
 
     # Operating frequency (for eddy current calculations)

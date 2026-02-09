@@ -179,8 +179,8 @@ class TestSkinDepth:
         expected = math.sqrt(2.0) * math.sqrt(1.0 / (muo * murt * omega * sigma_c))
         assert math.isclose(delta, expected, rel_tol=1e-10)
 
-        # Sanity check against the 4140 shaft values in "SkinDepthStress.nb" notebook
-        expected_delta = 0.00003338462250895936
+        # Sanity check against the most likely case 4140 shaft values in "ModelAndUncertainty.nb" notebook
+        expected_delta = 0.0001362921506706406
         assert math.isclose(delta, expected_delta, rel_tol=1e-10)
 
     def test_skin_depth_returns_positive(self):
@@ -351,7 +351,7 @@ class TestEffectivePermeance:
         assert result > 0
 
         # The maths worked, validate against the "Effective Permeance" section in "ModelAndUncertainty.nb" notebook.
-        expected_effective_permeance = 2.493130356444797e-8
+        expected_effective_permeance = 1.317685195567926e-8
         assert math.isclose(result, expected_effective_permeance, rel_tol=1e-8)
 
     def test_effective_permeance_returns_positive(self):
@@ -476,7 +476,7 @@ class TestEquivalentPermeance:
         assert result > 0
 
         # The maths did math, validate against the "Equivalent Permeance" section in "ModelAndUncertainty.nb" notebook.
-        expected_equivalent_permeance = 3.187130729713295e-8
+        expected_equivalent_permeance = 2.060079579533785e-8
         assert math.isclose(result, expected_equivalent_permeance, rel_tol=1e-8)
 
     def test_equivalent_permeance_returns_positive(self):
