@@ -34,4 +34,4 @@ The sensor acts like a transformer, with a drive coil and a sensing coil couplin
 
 Inverse magnetostrictive sensor architectures for measuring torsional strain fall into four categories, shown in the figure below. In this figure, each sensor observes the same shaft experiencing a state of pure torque.
 
-![Illustration showing magnetoelastic (inverse magnetostrictive) torque sensor architectures including solenoid, cross, multi-branch, and hybrid designs](media/19b25b5f831901f90fc53e98fad4ced5.png)Line drawing showing a sketch of magnetostrictive mechanism. (original vector image from [Adobe Stock](https://stock.adobe.com/) File ID: [1889319905](https://stock.adobe.com/stock-photo/id/1889319905))
+![Illustration showing magnetoelastic (inverse magnetostrictive) torque sensor architectures including solenoid, cross, multi-branch, and hybrid designs](media/Arch_Magnetoelastic_2k_260120_065006.jpg)Line drawing showing a sketch of magnetostrictive mechanism. (original vector image from [Adobe Stock](https://stock.adobe.com/) File ID: [1935533037](https://stock.adobe.com/stock-photo/id/1935533037))
