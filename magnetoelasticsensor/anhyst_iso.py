@@ -20,6 +20,15 @@ Notes
 -----
 The expression coth(x) - 1/x is the Langevin function. Near x = 0, the
 direct formula is numerically unstable, so a series expansion is used.
+
+References
+----------
+[1] 	D. Jiles and D. Atherton, "Ferromagnetic hysteresis," in IEEE Transactions 
+        on Magnetics, vol. 19, no. 5, pp. 2183-2185, September 1983, 
+        doi: 10.1109/TMAG.1983.1062594.
+[2]  	Jiles, D. C., and D. L. Atherton. "Theory of Ferromagnetic Hysteresis." 
+        Journal of Magnetism and Magnetic Materials, vol. 61, nos. 1\[Dash]2, 
+        1986, pp. 48\[Dash]60.
 """
 
 from __future__ import annotations

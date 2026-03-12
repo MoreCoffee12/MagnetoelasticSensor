@@ -2,6 +2,15 @@
 anhyst_iso_test.py
 
 Pytest test harness for anhysteretic_magnetization() of an isotropic material.
+
+References
+----------
+[1] 	D. Jiles and D. Atherton, "Ferromagnetic hysteresis," in IEEE Transactions 
+        on Magnetics, vol. 19, no. 5, pp. 2183-2185, September 1983, 
+        doi: 10.1109/TMAG.1983.1062594.
+[2]  	Jiles, D. C., and D. L. Atherton. "Theory of Ferromagnetic Hysteresis." 
+        Journal of Magnetism and Magnetic Materials, vol. 61, nos. 1\[Dash]2, 
+        1986, pp. 48\[Dash]60.
 """
 
 from __future__ import annotations
@@ -111,6 +120,43 @@ def test_saturates_toward_negative_ms_for_large_negative_field() -> None:
     )
 
     assert np.isclose(result, -ms, rtol=0.0, atol=1e-4)
+
+
+def test_validate_figure03_ref02() -> None:
+    """
+    Test case for the value in Fig (3) in [2]. Validation number
+    from the companian Mathematia notebook.
+    """
+
+    # Saturation magnetization is 1.6e6 A/m
+    ms = 1.6e6
+
+    # Internal magnetic field, A/m
+    h = 300
+
+    # Bulk magnetization, A/m
+    m = 0.0
+
+    # Anhysteretic magnetization shape parameter, A/m
+    a = 1100
+
+    # mean field parameter, -
+    alpha = 0.0016
+
+    # Excecute the test case
+    man = anhysteretic_magnetization(
+        h=h,
+        m=m,
+        ms=ms,
+        a=a,
+        alpha=alpha,
+    )
+
+    # Expected value
+    man_expected = 144738.3548215022
+
+    # Perform the assert to close out the test case
+    assert np.isclose(man, man_expected, rtol=0.0, atol=1e-4)
 
 
 def test_supports_numpy_arrays() -> None:
