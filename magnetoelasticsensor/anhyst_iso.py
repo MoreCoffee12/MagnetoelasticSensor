@@ -110,3 +110,92 @@ def _langevin(x: np.ndarray | float) -> np.ndarray | float:
         return float(out)
 
     return out
+
+
+def anhysteretic_magnetization_deriv(
+    h: float | np.ndarray,
+    m: float | np.ndarray,
+    ms: float,
+    a: float,
+    alpha: float,
+) -> float | np.ndarray:
+    """
+    Compute dMan/dH_eff — the derivative of the anhysteretic magnetization
+    with respect to the effective field H_eff = H + alpha*M.
+
+    Formula::
+
+        dMan/dH_eff = (ms / a) * L'(x),  x = (H + alpha*M) / a
+
+    where L'(x) = 1/x^2 - csch^2(x) is the derivative of the Langevin function.
+
+    This is the ``dMah_iso`` function from the original MATLAB reference
+    implementation.
+
+    Parameters
+    ----------
+    h : float or numpy.ndarray
+        Applied magnetic field strength, A/m.
+    m : float or numpy.ndarray
+        Magnetization, A/m.
+    ms : float
+        Saturation magnetization, A/m.
+    a : float
+        Shape parameter. Must be nonzero.
+    alpha : float
+        Mean-field coupling parameter.
+
+    Returns
+    -------
+    float or numpy.ndarray
+        dMan/dH_eff with the same broadcasted shape as the inputs.
+
+    Raises
+    ------
+    ValueError
+        If ``a`` is zero.
+    """
+    if a == 0:
+        raise ValueError("Parameter 'a' must be nonzero.")
+
+    h_arr = np.asarray(h, dtype=float)
+    m_arr = np.asarray(m, dtype=float)
+
+    x = (h_arr + alpha * m_arr) / a
+    dman = (ms / a) * _langevin_deriv(x)
+
+    if np.isscalar(h) and np.isscalar(m):
+        return float(dman)
+
+    return dman
+
+
+def _langevin_deriv(x: np.ndarray | float) -> np.ndarray | float:
+    """
+    Compute the derivative of the Langevin function: L'(x) = 1/x^2 - csch^2(x).
+
+    Uses a Taylor series near x = 0 to avoid catastrophic cancellation::
+
+        L'(x) = 1/3 - x^2/15 + 2*x^4/189 + O(x^6)
+
+    The direct formula requires subtracting two O(1/x^2) terms that nearly
+    cancel, so the series threshold is set conservatively at |x| < 1e-4.
+    """
+    x_arr = np.asarray(x, dtype=float)
+    out = np.empty_like(x_arr)
+
+    small = np.abs(x_arr) < 1.0e-4
+    large = ~small
+
+    # Series expansion for small x
+    xs = x_arr[small]
+    out[small] = 1.0 / 3.0 - xs**2 / 15.0 + 2.0 * xs**4 / 189.0
+
+    # Direct evaluation for larger x
+    xl = x_arr[large]
+    out[large] = 1.0 / xl**2 - 1.0 / np.sinh(xl) ** 2
+
+    if np.isscalar(x):
+        return float(out)
+
+    return out
