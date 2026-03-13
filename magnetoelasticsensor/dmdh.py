@@ -44,7 +44,7 @@ import numpy as np
 
 from magnetoelasticsensor.anhyst_iso import (
     anhysteretic_magnetization,
-    anhysteretic_magnetization_deriv,
+    anhysteretic_magnetization_differential,
 )
 
 
@@ -135,8 +135,8 @@ def dmdh(
     # Denominator: (1+c) * (delta*k - alpha*(Man-M))
     dm2 = (1.0 + c) * (delta * k - alpha * (man - m_arr))
 
-    # Reversible contribution: c/(1+c) * dMan/dH_eff
-    dm3 = (c / (1.0 + c)) * anhysteretic_magnetization_deriv(
+    # Reversible contribution: c/(1+c) * dMan/dH using the analytical form
+    dm3 = (c / (1.0 + c)) * anhysteretic_magnetization_differential(
         h=h_arr, m=m_arr, ms=ms, a=a, alpha=alpha
     )
 

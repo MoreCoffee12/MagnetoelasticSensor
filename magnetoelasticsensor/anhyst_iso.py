@@ -85,6 +85,64 @@ def anhysteretic_magnetization(
     return man
 
 
+def anhysteretic_magnetization_differential(
+    h: float | np.ndarray,
+    m: float | np.ndarray,
+    ms: float,
+    a: float,
+    alpha: float,
+) -> float | np.ndarray:
+    """
+    Compute the analytical differential of the anhysteretic curve with
+    respect to the applied field H, holding M fixed.
+
+    Formula::
+
+        dMan/dH = Ms * (a / (H + alpha*M)^2 - csch((H + alpha*M)/a)^2 / a)
+
+    The direct closed form is numerically unstable near H + alpha*M = 0,
+    so the small-field limit is evaluated with the Langevin-series
+    expansion, which yields dMan/dH -> Ms / (3a).
+
+    Parameters
+    ----------
+    h : float or numpy.ndarray
+        Applied magnetic field strength, A/m.
+    m : float or numpy.ndarray
+        Magnetization, A/m.
+    ms : float
+        Saturation magnetization, A/m.
+    a : float
+        Shape parameter. Must be nonzero.
+    alpha : float
+        Mean-field coupling parameter.
+
+    Returns
+    -------
+    float or numpy.ndarray
+        Analytical differential dMan/dH with the same broadcasted shape as
+        the inputs.
+
+    Raises
+    ------
+    ValueError
+        If ``a`` is zero.
+    """
+    if a == 0:
+        raise ValueError("Parameter 'a' must be nonzero.")
+
+    h_arr = np.asarray(h, dtype=float)
+    m_arr = np.asarray(m, dtype=float)
+
+    x = (h_arr + alpha * m_arr) / a
+    dman_dh = (ms / a) * _langevin_deriv(x)
+
+    if np.isscalar(h) and np.isscalar(m):
+        return float(dman_dh)
+
+    return dman_dh
+
+
 def _langevin(x: np.ndarray | float) -> np.ndarray | float:
     """
     Compute the Langevin function L(x) = coth(x) - 1/x.
@@ -120,17 +178,13 @@ def anhysteretic_magnetization_deriv(
     alpha: float,
 ) -> float | np.ndarray:
     """
-    Compute dMan/dH_eff — the derivative of the anhysteretic magnetization
-    with respect to the effective field H_eff = H + alpha*M.
+    Backward-compatible wrapper for the analytical differential of the
+    anhysteretic curve.
 
-    Formula::
-
-        dMan/dH_eff = (ms / a) * L'(x),  x = (H + alpha*M) / a
-
-    where L'(x) = 1/x^2 - csch^2(x) is the derivative of the Langevin function.
-
-    This is the ``dMah_iso`` function from the original MATLAB reference
-    implementation.
+    For the isotropic Jiles-Atherton formulation used here, dMan/dH and
+    dMan/dH_eff are numerically identical when M is treated as fixed inside
+    the anhysteretic relation. This wrapper preserves the existing public API
+    while delegating to the explicit analytical helper.
 
     Parameters
     ----------
@@ -155,19 +209,13 @@ def anhysteretic_magnetization_deriv(
     ValueError
         If ``a`` is zero.
     """
-    if a == 0:
-        raise ValueError("Parameter 'a' must be nonzero.")
-
-    h_arr = np.asarray(h, dtype=float)
-    m_arr = np.asarray(m, dtype=float)
-
-    x = (h_arr + alpha * m_arr) / a
-    dman = (ms / a) * _langevin_deriv(x)
-
-    if np.isscalar(h) and np.isscalar(m):
-        return float(dman)
-
-    return dman
+    return anhysteretic_magnetization_differential(
+        h=h,
+        m=m,
+        ms=ms,
+        a=a,
+        alpha=alpha,
+    )
 
 
 def _langevin_deriv(x: np.ndarray | float) -> np.ndarray | float:
