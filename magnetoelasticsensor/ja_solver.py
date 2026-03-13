@@ -123,7 +123,7 @@ def ja_solver(
 
     span = (h_start, h_end)
     y0 = [float(m0)]
-    step_size = abs(h_end - h_start) / 10.0
+    step_size = abs(h_end - h_start) / 100.0
 
     if solver_type == 4:
         return _rk4(_rhs, span, y0, n_steps=50)
@@ -133,8 +133,8 @@ def ja_solver(
         span,
         y0,
         method=_SCIPY_METHODS[solver_type],
-        rtol=1e-4,
-        atol=1e-6,
+        rtol=1e-5,
+        atol=1e-7,
         max_step=step_size,
         first_step=step_size,
     )
