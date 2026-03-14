@@ -20,6 +20,7 @@ import pytest
 
 from magnetoelasticsensor.anhyst_iso import anhysteretic_magnetization_deriv
 from magnetoelasticsensor.dmdh import dmdh
+from magnetoelasticsensor.ja_props import JAProps
 
 # ---------------------------------------------------------------------------
 # Shared parameter set — matches the Mathematica companion-notebook values
@@ -38,9 +39,9 @@ _ALPHA = 0.0016    # mean-field coupling, -
 
 def _call(h, m, h_start=-1000.0, h_end=1000.0, **overrides):
     """Call dmdh with the shared parameter set, optionally overriding params."""
-    params = dict(a=_A, k=_K, c=_C, ms=_MS, alpha=_ALPHA)
+    params = dict(ms=_MS, a=_A, alpha=_ALPHA, k=_K, c=_C)
     params.update(overrides)
-    return dmdh(h=h, m=m, h_start=h_start, h_end=h_end, **params)
+    return dmdh(h=h, m=m, props=JAProps(**params), h_start=h_start, h_end=h_end)
 
 
 # ===========================================================================
@@ -100,18 +101,18 @@ class TestAtEquilibrium:
         h = 300.0
         # With alpha=0, Man(H) = ms*L(H/a) is independent of M
         m_man = float(
-            anhysteretic_magnetization(h=h, m=0.0, ms=_MS, a=_A, alpha=0.0)
+            anhysteretic_magnetization(h=h, m=0.0, props=JAProps(ms=_MS, a=_A, alpha=0.0))
         )
 
         expected_dm3 = (
             (_C / (1.0 + _C))
             * anhysteretic_magnetization_deriv(
-                h=h, m=m_man, ms=_MS, a=_A, alpha=0.0
+                h=h, m=m_man, props=JAProps(ms=_MS, a=_A, alpha=0.0)
             )
         )
         result = dmdh(
             h=h, m=m_man,
-            a=_A, k=_K, c=_C, ms=_MS, alpha=0.0,
+            props=JAProps(ms=_MS, a=_A, alpha=0.0, k=_K, c=_C),
             h_start=-1000.0, h_end=1000.0,
         )
         assert np.isclose(result, expected_dm3, rtol=1e-9)
@@ -139,10 +140,11 @@ class TestIrreversibleClipping:
         a, k, c, ms, alpha = 10.0, 100.0, 0.1, 1.6e6, 0.0
 
         expected_dm3 = (c / (1.0 + c)) * anhysteretic_magnetization_deriv(
-            h=h, m=m, ms=ms, a=a, alpha=alpha
+            h=h, m=m, props=JAProps(ms=ms, a=a, alpha=alpha)
         )
         result = dmdh(
-            h=h, m=m, a=a, k=k, c=c, ms=ms, alpha=alpha,
+            h=h, m=m,
+            props=JAProps(ms=ms, a=a, alpha=alpha, k=k, c=c),
             h_start=-1000.0, h_end=1000.0,
         )
         assert np.isclose(result, expected_dm3, rtol=1e-9)
@@ -158,10 +160,11 @@ class TestIrreversibleClipping:
         a, k, c, ms, alpha = 10.0, 100.0, 0.1, 1.6e6, 0.0
 
         expected_dm3 = (c / (1.0 + c)) * anhysteretic_magnetization_deriv(
-            h=h, m=m, ms=ms, a=a, alpha=alpha
+            h=h, m=m, props=JAProps(ms=ms, a=a, alpha=alpha)
         )
         result = dmdh(
-            h=h, m=m, a=a, k=k, c=c, ms=ms, alpha=alpha,
+            h=h, m=m,
+            props=JAProps(ms=ms, a=a, alpha=alpha, k=k, c=c),
             h_start=1000.0, h_end=-1000.0,
         )
         assert np.isclose(result, expected_dm3, rtol=1e-9)
@@ -189,7 +192,8 @@ class TestIrreversibleClipping:
         h, m = 0.0, 1.0e5
         a, k, c, ms, alpha = 10.0, 100.0, 0.0, 1.6e6, 0.0
         result = dmdh(
-            h=h, m=m, a=a, k=k, c=c, ms=ms, alpha=alpha,
+            h=h, m=m,
+            props=JAProps(ms=ms, a=a, alpha=alpha, k=k, c=c),
             h_start=5000.0, h_end=-5000.0,
         )
         assert result > 0.0
@@ -202,12 +206,12 @@ class TestIrreversibleClipping:
 class TestInputValidation:
     """ValueError is raised for invalid inputs."""
 
-    @pytest.mark.parametrize("bad_param", ["a", "k", "c", "ms", "alpha", "h_start", "h_end"])
+    @pytest.mark.parametrize("bad_param", ["h_start", "h_end"])
     def test_raises_on_nonscalar_parameter(self, bad_param):
-        """A non-scalar model parameter must raise ValueError."""
+        """A non-scalar sweep boundary must raise ValueError."""
         kwargs = dict(
             h=0.0, m=0.0,
-            a=_A, k=_K, c=_C, ms=_MS, alpha=_ALPHA,
+            props=JAProps(ms=_MS, a=_A, alpha=_ALPHA, k=_K, c=_C),
             h_start=-1000.0, h_end=1000.0,
         )
         kwargs[bad_param] = np.array([1.0, 2.0])
@@ -220,7 +224,7 @@ class TestInputValidation:
             dmdh(
                 h=np.array([0.0, 1.0, 2.0]),
                 m=np.array([0.0, 0.0]),
-                a=_A, k=_K, c=_C, ms=_MS, alpha=_ALPHA,
+                props=JAProps(ms=_MS, a=_A, alpha=_ALPHA, k=_K, c=_C),
                 h_start=-1000.0, h_end=1000.0,
             )
 
@@ -266,7 +270,7 @@ class TestAnhystereticDeriv:
     def test_at_origin_equals_ms_over_3a(self):
         """L'(0) = 1/3, so dMan/dH_eff(0) = ms/(3a)."""
         result = anhysteretic_magnetization_deriv(
-            h=0.0, m=0.0, ms=_MS, a=_A, alpha=0.0
+            h=0.0, m=0.0, props=JAProps(ms=_MS, a=_A, alpha=0.0)
         )
         expected = _MS / (3.0 * _A)
         assert np.isclose(result, expected, rtol=1e-9)
@@ -276,14 +280,14 @@ class TestAnhystereticDeriv:
         h_vals = np.linspace(-1000.0, 1000.0, 200)
         h_vals = h_vals[h_vals != 0.0]
         result = anhysteretic_magnetization_deriv(
-            h=h_vals, m=np.zeros_like(h_vals), ms=_MS, a=_A, alpha=0.0
+            h=h_vals, m=np.zeros_like(h_vals), props=JAProps(ms=_MS, a=_A, alpha=0.0)
         )
         assert np.all(result > 0.0)
 
     def test_vanishes_at_large_field(self):
         """For large |H|, L'(x) → 0, so dMan/dH_eff → 0."""
         result = anhysteretic_magnetization_deriv(
-            h=1.0e8, m=0.0, ms=_MS, a=_A, alpha=0.0
+            h=1.0e8, m=0.0, props=JAProps(ms=_MS, a=_A, alpha=0.0)
         )
         assert np.isclose(result, 0.0, atol=1e-6)
 
@@ -291,17 +295,17 @@ class TestAnhystereticDeriv:
         """L'(x) is an even function, so dMan/dH_eff(H) == dMan/dH_eff(-H)."""
         h = 300.0
         pos = anhysteretic_magnetization_deriv(
-            h=h, m=0.0, ms=_MS, a=_A, alpha=0.0
+            h=h, m=0.0, props=JAProps(ms=_MS, a=_A, alpha=0.0)
         )
         neg = anhysteretic_magnetization_deriv(
-            h=-h, m=0.0, ms=_MS, a=_A, alpha=0.0
+            h=-h, m=0.0, props=JAProps(ms=_MS, a=_A, alpha=0.0)
         )
         assert np.isclose(pos, neg, rtol=1e-12)
 
     def test_numpy_array_input(self):
         h = np.array([-500.0, 0.0, 500.0])
         result = anhysteretic_magnetization_deriv(
-            h=h, m=np.zeros_like(h), ms=_MS, a=_A, alpha=0.0
+            h=h, m=np.zeros_like(h), props=JAProps(ms=_MS, a=_A, alpha=0.0)
         )
         assert isinstance(result, np.ndarray)
         assert result.shape == h.shape
@@ -309,5 +313,5 @@ class TestAnhystereticDeriv:
     def test_raises_when_a_is_zero(self):
         with pytest.raises(ValueError, match="must be nonzero"):
             anhysteretic_magnetization_deriv(
-                h=10.0, m=0.0, ms=_MS, a=0.0, alpha=0.0
+                h=10.0, m=0.0, props=JAProps(ms=_MS, a=0.0, alpha=0.0)
             )

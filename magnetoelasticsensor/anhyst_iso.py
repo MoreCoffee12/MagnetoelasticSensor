@@ -35,13 +35,13 @@ from __future__ import annotations
 
 import numpy as np
 
+from magnetoelasticsensor.ja_props import JAProps
+
 
 def anhysteretic_magnetization(
     h: float | np.ndarray,
     m: float | np.ndarray,
-    ms: float,
-    a: float,
-    alpha: float,
+    props: JAProps,
 ) -> float | np.ndarray:
     """
     Compute anhysteretic magnetization for the Jiles-Atherton model.
@@ -52,12 +52,9 @@ def anhysteretic_magnetization(
         Applied magnetic field strength.
     m : float or numpy.ndarray
         Magnetization.
-    ms : float
-        Saturation magnetization.
-    a : float
-        Shape parameter for the anhysteretic curve. Must be nonzero.
-    alpha : float
-        Mean-field coupling parameter.
+    props : JAProps
+        Jiles-Atherton model parameters.  Only ``ms``, ``a``, and
+        ``alpha`` are used by this function.
 
     Returns
     -------
@@ -68,16 +65,16 @@ def anhysteretic_magnetization(
     Raises
     ------
     ValueError
-        If `a` is zero.
+        If ``props.a`` is zero.
     """
-    if a == 0:
+    if props.a == 0:
         raise ValueError("Parameter 'a' must be nonzero.")
 
     h_arr = np.asarray(h, dtype=float)
     m_arr = np.asarray(m, dtype=float)
 
-    x = (h_arr + alpha * m_arr) / a
-    man = ms * _langevin(x)
+    x = (h_arr + props.alpha * m_arr) / props.a
+    man = props.ms * _langevin(x)
 
     if np.isscalar(h) and np.isscalar(m):
         return float(man)
@@ -88,9 +85,7 @@ def anhysteretic_magnetization(
 def anhysteretic_magnetization_differential(
     h: float | np.ndarray,
     m: float | np.ndarray,
-    ms: float,
-    a: float,
-    alpha: float,
+    props: JAProps,
 ) -> float | np.ndarray:
     """
     Compute the analytical differential of the anhysteretic curve with
@@ -110,12 +105,9 @@ def anhysteretic_magnetization_differential(
         Applied magnetic field strength, A/m.
     m : float or numpy.ndarray
         Magnetization, A/m.
-    ms : float
-        Saturation magnetization, A/m.
-    a : float
-        Shape parameter. Must be nonzero.
-    alpha : float
-        Mean-field coupling parameter.
+    props : JAProps
+        Jiles-Atherton model parameters.  Only ``ms``, ``a``, and
+        ``alpha`` are used by this function.
 
     Returns
     -------
@@ -126,16 +118,16 @@ def anhysteretic_magnetization_differential(
     Raises
     ------
     ValueError
-        If ``a`` is zero.
+        If ``props.a`` is zero.
     """
-    if a == 0:
+    if props.a == 0:
         raise ValueError("Parameter 'a' must be nonzero.")
 
     h_arr = np.asarray(h, dtype=float)
     m_arr = np.asarray(m, dtype=float)
 
-    x = (h_arr + alpha * m_arr) / a
-    dman_dh = (ms / a) * _langevin_deriv(x)
+    x = (h_arr + props.alpha * m_arr) / props.a
+    dman_dh = (props.ms / props.a) * _langevin_deriv(x)
 
     if np.isscalar(h) and np.isscalar(m):
         return float(dman_dh)
@@ -173,9 +165,7 @@ def _langevin(x: np.ndarray | float) -> np.ndarray | float:
 def anhysteretic_magnetization_deriv(
     h: float | np.ndarray,
     m: float | np.ndarray,
-    ms: float,
-    a: float,
-    alpha: float,
+    props: JAProps,
 ) -> float | np.ndarray:
     """
     Backward-compatible wrapper for the analytical differential of the
@@ -192,12 +182,9 @@ def anhysteretic_magnetization_deriv(
         Applied magnetic field strength, A/m.
     m : float or numpy.ndarray
         Magnetization, A/m.
-    ms : float
-        Saturation magnetization, A/m.
-    a : float
-        Shape parameter. Must be nonzero.
-    alpha : float
-        Mean-field coupling parameter.
+    props : JAProps
+        Jiles-Atherton model parameters.  Only ``ms``, ``a``, and
+        ``alpha`` are used by this function.
 
     Returns
     -------
@@ -207,15 +194,9 @@ def anhysteretic_magnetization_deriv(
     Raises
     ------
     ValueError
-        If ``a`` is zero.
+        If ``props.a`` is zero.
     """
-    return anhysteretic_magnetization_differential(
-        h=h,
-        m=m,
-        ms=ms,
-        a=a,
-        alpha=alpha,
-    )
+    return anhysteretic_magnetization_differential(h=h, m=m, props=props)
 
 
 def _langevin_deriv(x: np.ndarray | float) -> np.ndarray | float:

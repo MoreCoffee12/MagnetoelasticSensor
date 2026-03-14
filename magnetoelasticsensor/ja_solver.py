@@ -32,6 +32,7 @@ import numpy as np
 from scipy.integrate import solve_ivp
 
 from magnetoelasticsensor.dmdh import dmdh
+from magnetoelasticsensor.ja_props import JAProps
 
 _SCIPY_METHODS: dict[int, str] = {
     1: "RK23",
@@ -41,11 +42,7 @@ _SCIPY_METHODS: dict[int, str] = {
 
 
 def ja_solver(
-    a: float,
-    k: float,
-    c: float,
-    ms: float,
-    alpha: float,
+    props: JAProps,
     h_start: float,
     h_end: float,
     m0: float,
@@ -56,16 +53,8 @@ def ja_solver(
 
     Parameters
     ----------
-    a : float
-        Domain density / shape parameter for the anhysteretic curve, A/m.
-    k : float
-        Average energy required to break a pinning site, A/m.
-    c : float
-        Magnetization reversibility, dimensionless (0 ≤ c ≤ 1).
-    ms : float
-        Saturation magnetization, A/m.
-    alpha : float
-        Mean-field (Bloch) coupling coefficient, dimensionless.
+    props : JAProps
+        Jiles-Atherton model parameters (ms, a, alpha, k, c).
     h_start : float
         Initial applied field value, A/m.
     h_end : float
@@ -111,11 +100,7 @@ def ja_solver(
             dmdh(
                 h=h,
                 m=m_vec[0],
-                a=a,
-                k=k,
-                c=c,
-                ms=ms,
-                alpha=alpha,
+                props=props,
                 h_start=h_start,
                 h_end=h_end,
             )

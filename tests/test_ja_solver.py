@@ -24,6 +24,7 @@ import numpy as np
 import pytest
 
 from magnetoelasticsensor.ja_solver import ja_solver
+from magnetoelasticsensor.ja_props import JAProps
 
 # ---------------------------------------------------------------------------
 # Shared parameter set — matches the Mathematica companion-notebook values
@@ -37,10 +38,11 @@ _ALPHA = 0.0016
 
 def _solve(h_start, h_end, m0=0.0, solver_type=1, **overrides):
     """Run ja_solver with the shared parameter set."""
-    params = dict(a=_A, k=_K, c=_C, ms=_MS, alpha=_ALPHA)
+    params = dict(ms=_MS, a=_A, alpha=_ALPHA, k=_K, c=_C)
     params.update(overrides)
     return ja_solver(
-        h_start=h_start, h_end=h_end, m0=m0, solver_type=solver_type, **params
+        props=JAProps(**params),
+        h_start=h_start, h_end=h_end, m0=m0, solver_type=solver_type,
     )
 
 
@@ -214,7 +216,7 @@ class TestInputValidation:
     def test_default_solver_type_runs_without_error(self):
         """No solver_type supplied → uses default (type 1, RK23)."""
         h_out, m_out = ja_solver(
-            a=_A, k=_K, c=_C, ms=_MS, alpha=_ALPHA,
+            props=JAProps(ms=_MS, a=_A, alpha=_ALPHA, k=_K, c=_C),
             h_start=0.0, h_end=2000.0, m0=0.0,
         )
         assert len(h_out) >= 2

@@ -46,16 +46,13 @@ from magnetoelasticsensor.anhyst_iso import (
     anhysteretic_magnetization,
     anhysteretic_magnetization_differential,
 )
+from magnetoelasticsensor.ja_props import JAProps
 
 
 def dmdh(
     h: float | np.ndarray,
     m: float | np.ndarray,
-    a: float,
-    k: float,
-    c: float,
-    ms: float,
-    alpha: float,
+    props: JAProps,
     h_start: float,
     h_end: float,
 ) -> float | np.ndarray:
@@ -68,16 +65,8 @@ def dmdh(
         Applied magnetic field, A/m.
     m : float or numpy.ndarray
         Magnetization, A/m.  Must have the same shape as ``h``.
-    a : float
-        Domain density / shape parameter for the anhysteretic curve, A/m.
-    k : float
-        Average energy required to break a pinning site, A/m.
-    c : float
-        Magnetization reversibility, dimensionless (0 ≤ c ≤ 1).
-    ms : float
-        Saturation magnetization, A/m.
-    alpha : float
-        Mean-field (Bloch) coupling coefficient, dimensionless.
+    props : JAProps
+        Jiles-Atherton model parameters (ms, a, alpha, k, c).
     h_start : float
         Starting field value for the current monotone sweep segment, A/m.
     h_end : float
@@ -91,20 +80,11 @@ def dmdh(
     Raises
     ------
     ValueError
-        If any of ``a``, ``k``, ``c``, ``ms``, ``alpha``, ``h_start``,
-        ``h_end`` is not a scalar, or if ``h`` and ``m`` have mismatched
-        shapes.
+        If ``h_start`` or ``h_end`` is not a scalar, or if ``h`` and ``m``
+        have mismatched shapes.
     """
-    # Validate scalar model parameters (mirrors the MATLAB guard)
-    for name, val in (
-        ("a", a),
-        ("k", k),
-        ("c", c),
-        ("ms", ms),
-        ("alpha", alpha),
-        ("h_start", h_start),
-        ("h_end", h_end),
-    ):
+    # Validate scalar sweep-boundary parameters
+    for name, val in (("h_start", h_start), ("h_end", h_end)):
         if not np.isscalar(val):
             raise ValueError(
                 f"Parameter '{name}' must be a scalar; "
@@ -121,7 +101,7 @@ def dmdh(
         )
 
     # Anhysteretic magnetization at the effective field H + alpha*M
-    man = anhysteretic_magnetization(h=h_arr, m=m_arr, ms=ms, a=a, alpha=alpha)
+    man = anhysteretic_magnetization(h=h_arr, m=m_arr, props=props)
 
     # Irreversible numerator (Man - M), clipped to enforce realizability
     dm1 = man - m_arr
@@ -133,11 +113,11 @@ def dmdh(
         delta = -1.0
 
     # Denominator: (1+c) * (delta*k - alpha*(Man-M))
-    dm2 = (1.0 + c) * (delta * k - alpha * (man - m_arr))
+    dm2 = (1.0 + props.c) * (delta * props.k - props.alpha * (man - m_arr))
 
     # Reversible contribution: c/(1+c) * dMan/dH using the analytical form
-    dm3 = (c / (1.0 + c)) * anhysteretic_magnetization_differential(
-        h=h_arr, m=m_arr, ms=ms, a=a, alpha=alpha
+    dm3 = (props.c / (1.0 + props.c)) * anhysteretic_magnetization_differential(
+        h=h_arr, m=m_arr, props=props
     )
 
     result = dm1 / dm2 + dm3

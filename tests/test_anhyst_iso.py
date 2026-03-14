@@ -23,6 +23,7 @@ from magnetoelasticsensor.anhyst_iso import (
     anhysteretic_magnetization_deriv,
     anhysteretic_magnetization_differential,
 )
+from magnetoelasticsensor.ja_props import JAProps
 
 
 def test_returns_zero_at_zero_effective_field() -> None:
@@ -33,9 +34,7 @@ def test_returns_zero_at_zero_effective_field() -> None:
     result = anhysteretic_magnetization(
         h=0.0,
         m=0.0,
-        ms=1.6,
-        a=10.0,
-        alpha=0.02,
+        props=JAProps(ms=1.6, a=10.0, alpha=0.02),
     )
 
     assert np.isclose(result, 0.0, atol=1e-12)
@@ -58,9 +57,7 @@ def test_matches_direct_formula_away_from_zero() -> None:
     result = anhysteretic_magnetization(
         h=h,
         m=m,
-        ms=ms,
-        a=a,
-        alpha=alpha,
+        props=JAProps(ms=ms, a=a, alpha=alpha),
     )
 
     assert np.isclose(result, expected, rtol=1e-12, atol=1e-12)
@@ -77,16 +74,12 @@ def test_odd_symmetry_when_m_is_zero_and_alpha_is_zero() -> None:
     pos = anhysteretic_magnetization(
         h=75.0,
         m=0.0,
-        ms=ms,
-        a=a,
-        alpha=0.0,
+        props=JAProps(ms=ms, a=a, alpha=0.0),
     )
     neg = anhysteretic_magnetization(
         h=-75.0,
         m=0.0,
-        ms=ms,
-        a=a,
-        alpha=0.0,
+        props=JAProps(ms=ms, a=a, alpha=0.0),
     )
 
     assert np.isclose(neg, -pos, rtol=1e-12, atol=1e-12)
@@ -101,9 +94,7 @@ def test_saturates_toward_ms_for_large_positive_field() -> None:
     result = anhysteretic_magnetization(
         h=1.0e6,
         m=0.0,
-        ms=ms,
-        a=10.0,
-        alpha=0.0,
+        props=JAProps(ms=ms, a=10.0, alpha=0.0),
     )
 
     assert np.isclose(result, ms, rtol=0.0, atol=1e-4)
@@ -118,9 +109,7 @@ def test_saturates_toward_negative_ms_for_large_negative_field() -> None:
     result = anhysteretic_magnetization(
         h=-1.0e6,
         m=0.0,
-        ms=ms,
-        a=10.0,
-        alpha=0.0,
+        props=JAProps(ms=ms, a=10.0, alpha=0.0),
     )
 
     assert np.isclose(result, -ms, rtol=0.0, atol=1e-4)
@@ -151,9 +140,7 @@ def test_validate_figure03_ref02() -> None:
     man = anhysteretic_magnetization(
         h=h,
         m=m,
-        ms=ms,
-        a=a,
-        alpha=alpha,
+        props=JAProps(ms=ms, a=a, alpha=alpha),
     )
 
     # Expected value
@@ -173,9 +160,7 @@ def test_supports_numpy_arrays() -> None:
     result = anhysteretic_magnetization(
         h=h,
         m=m,
-        ms=2.0,
-        a=20.0,
-        alpha=0.0,
+        props=JAProps(ms=2.0, a=20.0, alpha=0.0),
     )
 
     assert isinstance(result, np.ndarray)
@@ -193,9 +178,7 @@ def test_raises_error_when_a_is_zero() -> None:
         anhysteretic_magnetization(
             h=10.0,
             m=1.0,
-            ms=1.0,
-            a=0.0,
-            alpha=0.01,
+            props=JAProps(ms=1.0, a=0.0, alpha=0.01),
         )
 
 
@@ -222,9 +205,7 @@ class TestAnhystereticDifferential:
         result = anhysteretic_magnetization_differential(
             h=h,
             m=m,
-            ms=ms,
-            a=a,
-            alpha=alpha,
+            props=JAProps(ms=ms, a=a, alpha=alpha),
         )
 
         assert np.isclose(result, expected, rtol=1e-12, atol=1e-12)
@@ -237,9 +218,7 @@ class TestAnhystereticDifferential:
         result = anhysteretic_magnetization_differential(
             h=0.0,
             m=0.0,
-            ms=ms,
-            a=a,
-            alpha=0.0016,
+            props=JAProps(ms=ms, a=a, alpha=0.0016),
         )
 
         assert np.isclose(result, ms / (3.0 * a), rtol=1e-9)
@@ -256,23 +235,17 @@ class TestAnhystereticDifferential:
         analytical = anhysteretic_magnetization_differential(
             h=h,
             m=m,
-            ms=ms,
-            a=a,
-            alpha=alpha,
+            props=JAProps(ms=ms, a=a, alpha=alpha),
         )
         forward = anhysteretic_magnetization(
             h=h + step,
             m=m,
-            ms=ms,
-            a=a,
-            alpha=alpha,
+            props=JAProps(ms=ms, a=a, alpha=alpha),
         )
         backward = anhysteretic_magnetization(
             h=h - step,
             m=m,
-            ms=ms,
-            a=a,
-            alpha=alpha,
+            props=JAProps(ms=ms, a=a, alpha=alpha),
         )
         numerical = (forward - backward) / (2.0 * step)
 
@@ -286,16 +259,12 @@ class TestAnhystereticDifferential:
         analytical = anhysteretic_magnetization_differential(
             h=h,
             m=m,
-            ms=1.6e6,
-            a=1100.0,
-            alpha=0.0016,
+            props=JAProps(ms=1.6e6, a=1100.0, alpha=0.0016),
         )
         legacy = anhysteretic_magnetization_deriv(
             h=h,
             m=m,
-            ms=1.6e6,
-            a=1100.0,
-            alpha=0.0016,
+            props=JAProps(ms=1.6e6, a=1100.0, alpha=0.0016),
         )
 
         assert np.allclose(analytical, legacy, rtol=1e-12, atol=1e-12)
@@ -324,9 +293,7 @@ class TestAnhystereticDifferential:
         man = anhysteretic_magnetization_differential(
             h=h,
             m=m,
-            ms=ms,
-            a=a,
-            alpha=alpha,
+            props=JAProps(ms=ms, a=a, alpha=alpha),
         )
 
         # Expected value from the companion Mathematica notebook
@@ -341,7 +308,5 @@ class TestAnhystereticDifferential:
             anhysteretic_magnetization_differential(
                 h=10.0,
                 m=1.0,
-                ms=1.0,
-                a=0.0,
-                alpha=0.01,
+                props=JAProps(ms=1.0, a=0.0, alpha=0.01),
             )
