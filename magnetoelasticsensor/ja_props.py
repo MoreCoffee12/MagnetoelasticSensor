@@ -44,14 +44,8 @@ class JAProps:
     nu : float, optional
         Poisson ratio used in the stress coupling term; defaults to 0.3.
     sigma0 : float, optional
-        Applied uniaxial stress, Pa. Updating this value updates ``gamma1``
-        and ``gamma2`` using their linear sigma0 dependence.
-    gamma1 : float, optional
-        Initial first-order magnetoelastic coefficient at the current
-        ``sigma0``. Becomes read-only after initialization.
-    gamma2 : float, optional
-        Initial third-order magnetoelastic coefficient at the current
-        ``sigma0``. Becomes read-only after initialization.
+        Applied uniaxial stress, Pa. Updating this value updates the
+        computed read-only ``gamma1`` and ``gamma2`` values.
     gamma1_intercept : float, optional
         Public intercept for the linear ``gamma1(sigma0)`` model.
     gamma2_intercept : float, optional
@@ -70,54 +64,52 @@ class JAProps:
     theta: float = 0.0
     nu: float = 0.3
     sigma0: float = 0.0
-    gamma1: float = 0.0
-    gamma2: float = 0.0
-    gamma1_intercept: float | None = None
-    gamma2_intercept: float | None = None
+    gamma1_intercept: float = 0.0
+    gamma2_intercept: float = 0.0
     gamma1_sigma_slope: float = 0.0
     gamma2_sigma_slope: float = 0.0
 
-    _initialized: bool = field(init=False, repr=False, default=False)
+    _gamma1: float = field(init=False, repr=False, default=0.0)
+    _gamma2: float = field(init=False, repr=False, default=0.0)
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "sigma0", float(self.sigma0))
-        object.__setattr__(self, "gamma1", float(self.gamma1))
-        object.__setattr__(self, "gamma2", float(self.gamma2))
+        object.__setattr__(self, "gamma1_intercept", float(self.gamma1_intercept))
+        object.__setattr__(self, "gamma2_intercept", float(self.gamma2_intercept))
         object.__setattr__(self, "gamma1_sigma_slope", float(self.gamma1_sigma_slope))
         object.__setattr__(self, "gamma2_sigma_slope", float(self.gamma2_sigma_slope))
-        if self.gamma1_intercept is None:
-            object.__setattr__(
-                self,
-                "gamma1_intercept",
-                self.gamma1 - self.gamma1_sigma_slope * self.sigma0,
-            )
-        else:
-            object.__setattr__(self, "gamma1_intercept", float(self.gamma1_intercept))
-        if self.gamma2_intercept is None:
-            object.__setattr__(
-                self,
-                "gamma2_intercept",
-                self.gamma2 - self.gamma2_sigma_slope * self.sigma0,
-            )
-        else:
-            object.__setattr__(self, "gamma2_intercept", float(self.gamma2_intercept))
+
         self._update_stress_dependent_gammas()
-        object.__setattr__(self, "_initialized", True)
+
+    @property
+    def gamma1(self) -> float:
+        """Read-only first-order magnetoelastic coefficient at current stress."""
+        return self._gamma1
+
+    @property
+    def gamma2(self) -> float:
+        """Read-only third-order magnetoelastic coefficient at current stress."""
+        return self._gamma2
 
     def __setattr__(self, name: str, value) -> None:
-        if (
-            name in {"gamma1", "gamma2"}
-            and "_initialized" in self.__dict__
-            and self.__dict__["_initialized"]
-        ):
+        if name in {"gamma1", "gamma2"}:
             raise AttributeError(
                 f"'{name}' is read-only. Update sigma0, intercepts, or slopes instead."
             )
 
+        if name in {
+            "sigma0",
+            "gamma1_intercept",
+            "gamma2_intercept",
+            "gamma1_sigma_slope",
+            "gamma2_sigma_slope",
+        }:
+            value = float(value)
+
         object.__setattr__(self, name, value)
 
         # During dataclass initialization, dependent fields may not yet exist.
-        if "_initialized" not in self.__dict__ or not self.__dict__["_initialized"]:
+        if "_gamma1" not in self.__dict__:
             return
 
         if name in {
@@ -132,11 +124,11 @@ class JAProps:
     def _update_stress_dependent_gammas(self) -> None:
         object.__setattr__(
             self,
-            "gamma1",
+            "_gamma1",
             float(self.gamma1_intercept) + self.gamma1_sigma_slope * self.sigma0,
         )
         object.__setattr__(
             self,
-            "gamma2",
+            "_gamma2",
             float(self.gamma2_intercept) + self.gamma2_sigma_slope * self.sigma0,
         )

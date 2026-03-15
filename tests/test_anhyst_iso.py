@@ -362,8 +362,8 @@ def test_stress_effective_field_matches_closed_form() -> None:
         theta=np.pi / 6.0,
         nu=0.3,
         sigma0=30e6,
-        gamma1=8e-11,
-        gamma2=1e-20,
+        gamma1_intercept=8e-11,
+        gamma2_intercept=1e-20,
     )
 
     mu0 = 4.0e-7 * np.pi
@@ -397,8 +397,8 @@ def test_anhysteretic_stress_fig02_m50000_000000() -> None:
         theta=np.pi / 6.0,
         nu=0.3,
         sigma0=0.0,
-        gamma1=8e-11,
-        gamma2=1e-20,
+        gamma1_intercept=8e-11,
+        gamma2_intercept=1e-20,
     )
 
     mu0 = 4.0e-7 * np.pi
@@ -418,47 +418,63 @@ def test_anhysteretic_stress_fig02_m50000_000000() -> None:
 
 def test_sigma0_update_refreshes_gamma_values_linearly() -> None:
     """gamma1 and gamma2 should be updated whenever sigma0 is changed."""
+    gamma1_at_sigma0 = 2.0
+    gamma2_at_sigma0 = -3.0
+    sigma0_initial = 10.0
+    slope1 = 0.5
+    slope2 = -0.25
+
     props = JAProps(
         ms=1.6e6,
         a=1100.0,
         alpha=0.0016,
-        sigma0=10.0,
-        gamma1=2.0,
-        gamma2=-3.0,
-        gamma1_sigma_slope=0.5,
-        gamma2_sigma_slope=-0.25,
+        sigma0=sigma0_initial,
+        gamma1_intercept=gamma1_at_sigma0 - slope1 * sigma0_initial,
+        gamma2_intercept=gamma2_at_sigma0 - slope2 * sigma0_initial,
+        gamma1_sigma_slope=slope1,
+        gamma2_sigma_slope=slope2,
     )
 
-    assert np.isclose(props.gamma1, 2.0)
-    assert np.isclose(props.gamma2, -3.0)
+    assert np.isclose(props.gamma1, gamma1_at_sigma0)
+    assert np.isclose(props.gamma2, gamma2_at_sigma0)
 
     props.sigma0 = 14.0
 
-    assert np.isclose(props.gamma1, 2.0 + 0.5 * (14.0 - 10.0))
-    assert np.isclose(props.gamma2, -3.0 + (-0.25) * (14.0 - 10.0))
+    assert np.isclose(props.gamma1, gamma1_at_sigma0 + slope1 * (14.0 - sigma0_initial))
+    assert np.isclose(props.gamma2, gamma2_at_sigma0 + slope2 * (14.0 - sigma0_initial))
 
 
 def test_intercepts_and_slopes_are_public_rw_but_gammas_are_read_only() -> None:
     """Intercepts/slopes are writable; gamma1/gamma2 are computed read-only values."""
+    
+    # Define test points
+    sigma0_test = 2.0   
+    gamma1_intercept_test = 1.5
+    gamma2_intercept_test = -0.5    
+    gamma1_sigma_slope_test = 0.25
+    gamma2_sigma_slope_test = -0.1
+    
     props = JAProps(
         ms=1.0,
         a=1.0,
         alpha=0.0,
-        sigma0=2.0,
-        gamma1_intercept=1.5,
-        gamma2_intercept=-0.5,
-        gamma1_sigma_slope=0.25,
-        gamma2_sigma_slope=-0.1,
+        sigma0=sigma0_test,
+        gamma1_intercept=gamma1_intercept_test,
+        gamma2_intercept=gamma2_intercept_test,
+        gamma1_sigma_slope=gamma1_sigma_slope_test,
+        gamma2_sigma_slope=gamma2_sigma_slope_test,
     )
 
-    assert np.isclose(props.gamma1, 1.5 + 0.25 * 2.0)
-    assert np.isclose(props.gamma2, -0.5 + (-0.1) * 2.0)
+    assert np.isclose(props.gamma1, gamma1_intercept_test + gamma1_sigma_slope_test * sigma0_test)
+    assert np.isclose(props.gamma2, gamma2_intercept_test + gamma2_sigma_slope_test * sigma0_test)
 
-    props.gamma1_intercept = 2.0
-    props.gamma2_sigma_slope = -0.2
+    gamma1_intercept_test = 2.0
+    gamma2_sigma_slope_test = -0.2
+    props.gamma1_intercept = gamma1_intercept_test
+    props.gamma2_sigma_slope = gamma2_sigma_slope_test
 
-    assert np.isclose(props.gamma1, 2.0 + 0.25 * 2.0)
-    assert np.isclose(props.gamma2, -0.5 + (-0.2) * 2.0)
+    assert np.isclose(props.gamma1, gamma1_intercept_test + gamma1_sigma_slope_test * sigma0_test)
+    assert np.isclose(props.gamma2, gamma2_intercept_test + gamma2_sigma_slope_test * sigma0_test)
 
     with pytest.raises(AttributeError, match="read-only"):
         props.gamma1 = 123.0
