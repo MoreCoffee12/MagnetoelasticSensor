@@ -382,7 +382,9 @@ def test_stress_effective_field_matches_closed_form() -> None:
 
 def test_anhysteretic_stress_fig02_m50000_000000() -> None:
     """Validate the added stress field terms against the companion Mathematica notebook,
-    anhyst_stress_iso.np, section "Values from Figure 2 in [3]."""
+    anhyst_stress_iso.np, section "Values from Figure 2 in [3].
+    Stress: 0 MPa
+    """
     ms = 1.7e6
     a = 1000.0
     alpha = 0.0010
@@ -406,8 +408,8 @@ def test_anhysteretic_stress_fig02_m50000_000000() -> None:
     # Did the JAProps correctly compute gamma1 and gamma2 based on the intercepts/slopes?
     gamma1_val = 4e-18
     gamma2_val = -2e-30
-    assert np.isclose(props.gamma1, gamma1_val)
-    assert np.isclose(props.gamma2, gamma2_val)   
+    assert np.isclose(props.gamma1/gamma1_val, 1.0, rtol=1e-12, atol=1e-12)
+    assert np.isclose(props.gamma2/gamma2_val, 1.0, rtol=1e-12, atol=1e-12)   
 
     # Define the test  value from the Mathematica notebook
     man_expected = 196732.2792143175
@@ -415,6 +417,79 @@ def test_anhysteretic_stress_fig02_m50000_000000() -> None:
     man = anhysteretic_magnetization(h=h, m=m, props=props)
     assert np.isclose(man, man_expected, rtol=1e-12, atol=1e-12)
 
+def test_anhysteretic_stress_fig02_m50000_Neg100() -> None:
+    """Validate the added stress field terms against the companion Mathematica notebook,
+    anhyst_stress_iso.np, section "Values from Figure 2 in [3].
+    Stress: -100 MPa
+    """
+    ms = 1.7e6
+    a = 1000.0
+    alpha = 0.0010
+    h = 300.0
+    m = 5.0e4
+
+    props = JAProps(
+        ms=ms,
+        a=a,
+        alpha=alpha,
+        k=1000.0,
+        theta=0.0,
+        nu=0.3,
+        sigma0=-100e6,
+        gamma1_intercept=4e-18,
+        gamma1_sigma_slope=-2e-26,
+        gamma2_intercept=2e-30,
+        gamma2_sigma_slope=-5e-39
+    )
+
+    # Did the JAProps correctly compute gamma1 and gamma2 based on the intercepts/slopes?
+    gamma1_val = 6e-18
+    gamma2_val = 2.5e-30
+    assert np.isclose(props.gamma1/gamma1_val, 1.0, rtol=1e-12, atol=1e-12)
+    assert np.isclose(props.gamma2/gamma2_val, 1.0, rtol=1e-12, atol=1e-12)   
+
+    # Define the test  value from the Mathematica notebook
+    man_expected = 156856.5453324216
+
+    man = anhysteretic_magnetization(h=h, m=m, props=props)
+    assert np.isclose(man, man_expected, rtol=1e-10, atol=1e-10)
+
+def test_anhysteretic_stress_fig02_m50000_Pos100() -> None:
+    """Validate the added stress field terms against the companion Mathematica notebook,
+    anhyst_stress_iso.np, section "Values from Figure 2 in [3].
+    Stress: +100 MPa
+    """
+    ms = 1.7e6
+    a = 1000.0
+    alpha = 0.0010
+    h = 300.0
+    m = 5.0e4
+
+    props = JAProps(
+        ms=ms,
+        a=a,
+        alpha=alpha,
+        k=1000.0,
+        theta=0.0,
+        nu=0.3,
+        sigma0=+100e6,
+        gamma1_intercept=4e-18,
+        gamma1_sigma_slope=-2e-26,
+        gamma2_intercept=2e-30,
+        gamma2_sigma_slope=-5e-39
+    )
+
+    # Did the JAProps correctly compute gamma1 and gamma2 based on the intercepts/slopes?
+    gamma1_val = 2e-18
+    gamma2_val = 1.5e-30
+    assert np.isclose(props.gamma1/gamma1_val, 1.0, rtol=1e-12, atol=1e-12)
+    assert np.isclose(props.gamma2/gamma2_val, 1.0, rtol=1e-12, atol=1e-12)   
+
+    # Define the test  value from the Mathematica notebook
+    man_expected = 209962.4831215131
+
+    man = anhysteretic_magnetization(h=h, m=m, props=props)
+    assert np.isclose(man, man_expected, rtol=1e-10, atol=1e-10)
 
 def test_sigma0_update_refreshes_gamma_values_linearly() -> None:
     """gamma1 and gamma2 should be updated whenever sigma0 is changed."""
