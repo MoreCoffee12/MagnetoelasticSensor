@@ -4,6 +4,8 @@
 (**)
 
 
+(* Copyright 2026 Robot Squirrel Productions.  All rights reserved. This computer code is proprietary to Robot Squirrel Productions and/or its affiliate(s) and may be covered by patents. It may not be used, disclosed, modified, transferred, or reproduced without prior written consent. *)
+
 BeginPackage["MyUtilities`InitWorksheet`"]
 
 ClearAll[PrintAreaMomentOfInertia, Iprint, 
@@ -11,6 +13,7 @@ ClearAll[PrintAreaMomentOfInertia, Iprint,
   PrintAccel, accprint, 
   PrintArea, aprint,
   PrintMagField, mgprint, 
+  PrintMagFluxDensity, fdprint,
   PrintMass, maprint, 
   PrintPress, pprint,
   PrintPressSlope, slprint,
@@ -63,6 +66,9 @@ mlprint::usage = "Shorthand for PrintMassPerLength."
 
 PrintMagField::usage = "PrintMagField[mass, opts] prints magnetic field in A/m (Oe) or Oe (A/m)."
 mgprint::usage = "Shorthand for PrintMagField."
+
+PrintMagFluxDensity::usage = "PrintMagField[magflux, opts] prints magnetic flux density in T (G) or G (T)."
+fdprint::usage = "Shorthand for PrintMagFluxDensity."
 
 PrintMass::usage = "PrintMass[mass, opts] prints mass in kg (lb) or lb (kg)."
 massprint::usage = "Shorthand for PrintMass."
@@ -399,6 +405,46 @@ PrintMagField[MagField_?QuantityQ, OptionsPattern[]] := Module[
 ];
 
 mgprint = PrintMagField;
+
+(* Magnetic flux density *)
+MagFluxToSI[m_?QuantityQ] := UnitConvert[m, "Tesla"]
+MagFluxToUSCS[m_?QuantityQ] := UnitConvert[m, "Gauss"]
+
+FormatMagFluxValue[v_?QuantityQ, prec_:3] := NumberForm[N[v], prec]
+
+Options[PrintMagFluxDensity] = {
+	"Label" -> "Magnetic Flux", 
+	"Precision" -> 3, 
+	"SIUnitFirst" -> True,
+	"LabelWidth" -> 200};
+PrintMagFluxDensity[MagFlux_?QuantityQ, OptionsPattern[]] := Module[
+  {magfluxsi = MagFluxToSI[MagFlux], magfluxuscs = MagFluxToUSCS[MagFlux], label, valueRow},
+
+  label = OptionValue["Label"];
+
+  valueRow =
+    If[TrueQ[OptionValue["SIUnitFirst"]],
+      Row[{
+        FormatMagFluxValue[magfluxsi, OptionValue["Precision"]],
+        " (", FormatMagFluxValue[magfluxuscs, OptionValue["Precision"]], ")"
+      }],
+      Row[{
+        FormatMagFluxValue[magfluxuscs, OptionValue["Precision"]],
+        " (", FormatMagFluxValue[magfluxsi, OptionValue["Precision"]], ")"
+      }]
+    ];
+
+  Print @ Row[{
+    Pane[
+      Row[{label, ": "}],
+      Alignment -> Right,
+      ImageSize -> {OptionValue["LabelWidth"], Automatic}
+    ],
+    valueRow
+  }];
+];
+
+fdprint = PrintMagFluxDensity;
 
 (* Mass p *)
 MassToSI[m_?QuantityQ] := UnitConvert[m, "Kilograms"]
