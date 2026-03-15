@@ -115,7 +115,7 @@ def test_saturates_toward_negative_ms_for_large_negative_field() -> None:
     assert np.isclose(result, -ms, rtol=0.0, atol=1e-4)
 
 
-def test_validate_figure03_ref02() -> None:
+def test_validate_figure03_ref02_m0() -> None:
     """
     Test case for the value in Fig (3) in [2]. Validation number
     from the companian Mathematia notebook.
@@ -149,6 +149,39 @@ def test_validate_figure03_ref02() -> None:
     # Perform the assert to close out the test case
     assert np.isclose(man, man_expected, rtol=0.0, atol=1e-4)
 
+def test_validate_figure03_ref02_m50000() -> None:
+    """
+    Test case for the value in Fig (3) in [2]. Validation number
+    from the companian Mathematia notebook, M = 50000 A/m.
+    """
+
+    # Saturation magnetization is 1.6e6 A/m
+    ms = 1.6e6
+
+    # Internal magnetic field, A/m
+    h = 300
+
+    # Bulk magnetization, A/m
+    m = 50000.0
+
+    # Anhysteretic magnetization shape parameter, A/m
+    a = 1100
+
+    # mean field parameter, -
+    alpha = 0.0016
+
+    # Excecute the test case
+    man = anhysteretic_magnetization(
+        h=h,
+        m=m,
+        props=JAProps(ms=ms, a=a, alpha=alpha),
+    )
+
+    # Expected value
+    man_expected = 182793.0691901564
+
+    # Perform the assert to close out the test case
+    assert np.isclose(man, man_expected, rtol=0.0, atol=1e-4)
 
 def test_supports_numpy_arrays() -> None:
     """
@@ -268,10 +301,12 @@ class TestAnhystereticDifferential:
         )
 
         assert np.allclose(analytical, legacy, rtol=1e-12, atol=1e-12)
-    def test_validate_figure03_ref02(self) -> None:
+
+    def test_validate_figure03_ref02_M0(self) -> None:
         """
         Test case for the value in Fig (3) in [2]. Validation number
-        from the companian Mathematia notebook.
+        from the companian Mathematia notebook. In this case, the bulk
+        magnetization is clamped to zero.
         """
 
         # Saturation magnetization is 1.6e6 A/m
