@@ -42,9 +42,6 @@ import numpy as np
 from magnetoelasticsensor.ja_props import JAProps
 
 
-MU0 = 4.0e-7 * np.pi
-
-
 def anhysteretic_magnetization(
     h: float | np.ndarray,
     m: float | np.ndarray,
@@ -248,4 +245,4 @@ def _stress_field(m: np.ndarray, props: JAProps) -> np.ndarray:
     """
     angle_term = np.cos(props.theta) ** 2 - props.nu * np.sin(props.theta) ** 2
     magnetoelastic_term = 2.0 * m * props.gamma1 + 4.0 * (m**3) * props.gamma2
-    return (3.0 * angle_term * magnetoelastic_term * props.sigma0) / (2.0 * MU0)
+    return (3.0 * angle_term * magnetoelastic_term * props.sigma0) / (2.0 * JAProps.MU0)

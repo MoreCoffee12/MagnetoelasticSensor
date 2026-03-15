@@ -366,13 +366,12 @@ def test_stress_effective_field_matches_closed_form() -> None:
         gamma2_intercept=1e-20,
     )
 
-    mu0 = 4.0e-7 * np.pi
     h_sigma = (
         3.0
         * (np.cos(props.theta) ** 2 - props.nu * np.sin(props.theta) ** 2)
         * (2.0 * m * props.gamma1 + 4.0 * (m**3) * props.gamma2)
         * props.sigma0
-        / (2.0 * mu0)
+        / (2.0 * JAProps.MU0)
     )
     x_eff = (h + alpha * m + h_sigma) / a
     expected = ms * (1.0 / np.tanh(x_eff) - 1.0 / x_eff)
@@ -394,26 +393,27 @@ def test_anhysteretic_stress_fig02_m50000_000000() -> None:
         ms=ms,
         a=a,
         alpha=alpha,
-        theta=np.pi / 6.0,
+        k=1000.0,
+        theta=0.0,
         nu=0.3,
         sigma0=0.0,
-        gamma1_intercept=8e-11,
-        gamma2_intercept=1e-20,
+        gamma1_intercept=4e-18,
+        gamma1_sigma_slope=2e-26,
+        gamma2_intercept=-2e-30,
+        gamma2_sigma_slope=-5e-39
     )
 
-    mu0 = 4.0e-7 * np.pi
-    h_sigma = (
-        3.0
-        * (np.cos(props.theta) ** 2 - props.nu * np.sin(props.theta) ** 2)
-        * (2.0 * m * props.gamma1 + 4.0 * (m**3) * props.gamma2)
-        * props.sigma0
-        / (2.0 * mu0)
-    )
-    x_eff = (h + alpha * m + h_sigma) / a
-    expected = ms * (1.0 / np.tanh(x_eff) - 1.0 / x_eff)
+    # Did the JAProps correctly compute gamma1 and gamma2 based on the intercepts/slopes?
+    gamma1_val = 4e-18
+    gamma2_val = -2e-30
+    assert np.isclose(props.gamma1, gamma1_val)
+    assert np.isclose(props.gamma2, gamma2_val)   
 
-    result = anhysteretic_magnetization(h=h, m=m, props=props)
-    assert np.isclose(result, expected, rtol=1e-12, atol=1e-12)
+    # Define the test  value from the Mathematica notebook
+    man_expected = 196732.2792143175
+
+    man = anhysteretic_magnetization(h=h, m=m, props=props)
+    assert np.isclose(man, man_expected, rtol=1e-12, atol=1e-12)
 
 
 def test_sigma0_update_refreshes_gamma_values_linearly() -> None:

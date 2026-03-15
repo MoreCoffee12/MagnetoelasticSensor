@@ -15,7 +15,9 @@ References
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
+from typing import ClassVar
 
 
 @dataclass
@@ -54,7 +56,14 @@ class JAProps:
         Linear slope for ``gamma1`` as a function of ``sigma0``.
     gamma2_sigma_slope : float, optional
         Linear slope for ``gamma2`` as a function of ``sigma0``.
+
+    Constants
+    ---------
+    MU0 : float
+        Vacuum permeability, H/m.
     """
+
+    MU0: ClassVar[float] = 4.0e-7 * math.pi
 
     ms: float
     a: float
