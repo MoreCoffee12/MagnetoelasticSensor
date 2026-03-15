@@ -345,3 +345,123 @@ class TestAnhystereticDifferential:
                 m=1.0,
                 props=JAProps(ms=1.0, a=0.0, alpha=0.01),
             )
+
+
+def test_stress_effective_field_matches_closed_form() -> None:
+    """Validate the added stress field term against a direct closed-form check."""
+    ms = 1.6e6
+    a = 1100.0
+    alpha = 0.0016
+    h = 300.0
+    m = 5.0e4
+
+    props = JAProps(
+        ms=ms,
+        a=a,
+        alpha=alpha,
+        theta=np.pi / 6.0,
+        nu=0.3,
+        sigma0=30e6,
+        gamma1=8e-11,
+        gamma2=1e-20,
+    )
+
+    mu0 = 4.0e-7 * np.pi
+    h_sigma = (
+        3.0
+        * (np.cos(props.theta) ** 2 - props.nu * np.sin(props.theta) ** 2)
+        * (2.0 * m * props.gamma1 + 4.0 * (m**3) * props.gamma2)
+        * props.sigma0
+        / (2.0 * mu0)
+    )
+    x_eff = (h + alpha * m + h_sigma) / a
+    expected = ms * (1.0 / np.tanh(x_eff) - 1.0 / x_eff)
+
+    result = anhysteretic_magnetization(h=h, m=m, props=props)
+    assert np.isclose(result, expected, rtol=1e-12, atol=1e-12)
+
+
+def test_anhysteretic_stress_fig02_m50000_000000() -> None:
+    """Validate the added stress field terms against the companion Mathematica notebook,
+    anhyst_stress_iso.np, section "Values from Figure 2 in [3]."""
+    ms = 1.7e6
+    a = 1000.0
+    alpha = 0.0010
+    h = 300.0
+    m = 5.0e4
+
+    props = JAProps(
+        ms=ms,
+        a=a,
+        alpha=alpha,
+        theta=np.pi / 6.0,
+        nu=0.3,
+        sigma0=0.0,
+        gamma1=8e-11,
+        gamma2=1e-20,
+    )
+
+    mu0 = 4.0e-7 * np.pi
+    h_sigma = (
+        3.0
+        * (np.cos(props.theta) ** 2 - props.nu * np.sin(props.theta) ** 2)
+        * (2.0 * m * props.gamma1 + 4.0 * (m**3) * props.gamma2)
+        * props.sigma0
+        / (2.0 * mu0)
+    )
+    x_eff = (h + alpha * m + h_sigma) / a
+    expected = ms * (1.0 / np.tanh(x_eff) - 1.0 / x_eff)
+
+    result = anhysteretic_magnetization(h=h, m=m, props=props)
+    assert np.isclose(result, expected, rtol=1e-12, atol=1e-12)
+
+
+def test_sigma0_update_refreshes_gamma_values_linearly() -> None:
+    """gamma1 and gamma2 should be updated whenever sigma0 is changed."""
+    props = JAProps(
+        ms=1.6e6,
+        a=1100.0,
+        alpha=0.0016,
+        sigma0=10.0,
+        gamma1=2.0,
+        gamma2=-3.0,
+        gamma1_sigma_slope=0.5,
+        gamma2_sigma_slope=-0.25,
+    )
+
+    assert np.isclose(props.gamma1, 2.0)
+    assert np.isclose(props.gamma2, -3.0)
+
+    props.sigma0 = 14.0
+
+    assert np.isclose(props.gamma1, 2.0 + 0.5 * (14.0 - 10.0))
+    assert np.isclose(props.gamma2, -3.0 + (-0.25) * (14.0 - 10.0))
+
+
+def test_intercepts_and_slopes_are_public_rw_but_gammas_are_read_only() -> None:
+    """Intercepts/slopes are writable; gamma1/gamma2 are computed read-only values."""
+    props = JAProps(
+        ms=1.0,
+        a=1.0,
+        alpha=0.0,
+        sigma0=2.0,
+        gamma1_intercept=1.5,
+        gamma2_intercept=-0.5,
+        gamma1_sigma_slope=0.25,
+        gamma2_sigma_slope=-0.1,
+    )
+
+    assert np.isclose(props.gamma1, 1.5 + 0.25 * 2.0)
+    assert np.isclose(props.gamma2, -0.5 + (-0.1) * 2.0)
+
+    props.gamma1_intercept = 2.0
+    props.gamma2_sigma_slope = -0.2
+
+    assert np.isclose(props.gamma1, 2.0 + 0.25 * 2.0)
+    assert np.isclose(props.gamma2, -0.5 + (-0.2) * 2.0)
+
+    with pytest.raises(AttributeError, match="read-only"):
+        props.gamma1 = 123.0
+
+    with pytest.raises(AttributeError, match="read-only"):
+        props.gamma2 = -456.0

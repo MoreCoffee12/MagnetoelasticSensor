@@ -15,10 +15,10 @@ References
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
-@dataclass(frozen=True)
+@dataclass
 class JAProps:
     """
     Jiles-Atherton model parameters for an isotropic ferromagnetic material.
@@ -38,6 +38,28 @@ class JAProps:
     c : float, optional
         Magnetization reversibility, dimensionless (0 ≤ c ≤ 1).  Only
         required by the full hysteresis solver; defaults to 0.0.
+    theta : float, optional
+        Angle between the applied stress axis and magnetization axis,
+        radians. Used in the stress-induced field term; defaults to 0.0.
+    nu : float, optional
+        Poisson ratio used in the stress coupling term; defaults to 0.3.
+    sigma0 : float, optional
+        Applied uniaxial stress, Pa. Updating this value updates ``gamma1``
+        and ``gamma2`` using their linear sigma0 dependence.
+    gamma1 : float, optional
+        Initial first-order magnetoelastic coefficient at the current
+        ``sigma0``. Becomes read-only after initialization.
+    gamma2 : float, optional
+        Initial third-order magnetoelastic coefficient at the current
+        ``sigma0``. Becomes read-only after initialization.
+    gamma1_intercept : float, optional
+        Public intercept for the linear ``gamma1(sigma0)`` model.
+    gamma2_intercept : float, optional
+        Public intercept for the linear ``gamma2(sigma0)`` model.
+    gamma1_sigma_slope : float, optional
+        Linear slope for ``gamma1`` as a function of ``sigma0``.
+    gamma2_sigma_slope : float, optional
+        Linear slope for ``gamma2`` as a function of ``sigma0``.
     """
 
     ms: float
@@ -45,3 +67,76 @@ class JAProps:
     alpha: float
     k: float = 0.0
     c: float = 0.0
+    theta: float = 0.0
+    nu: float = 0.3
+    sigma0: float = 0.0
+    gamma1: float = 0.0
+    gamma2: float = 0.0
+    gamma1_intercept: float | None = None
+    gamma2_intercept: float | None = None
+    gamma1_sigma_slope: float = 0.0
+    gamma2_sigma_slope: float = 0.0
+
+    _initialized: bool = field(init=False, repr=False, default=False)
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "sigma0", float(self.sigma0))
+        object.__setattr__(self, "gamma1", float(self.gamma1))
+        object.__setattr__(self, "gamma2", float(self.gamma2))
+        object.__setattr__(self, "gamma1_sigma_slope", float(self.gamma1_sigma_slope))
+        object.__setattr__(self, "gamma2_sigma_slope", float(self.gamma2_sigma_slope))
+        if self.gamma1_intercept is None:
+            object.__setattr__(
+                self,
+                "gamma1_intercept",
+                self.gamma1 - self.gamma1_sigma_slope * self.sigma0,
+            )
+        else:
+            object.__setattr__(self, "gamma1_intercept", float(self.gamma1_intercept))
+        if self.gamma2_intercept is None:
+            object.__setattr__(
+                self,
+                "gamma2_intercept",
+                self.gamma2 - self.gamma2_sigma_slope * self.sigma0,
+            )
+        else:
+            object.__setattr__(self, "gamma2_intercept", float(self.gamma2_intercept))
+        self._update_stress_dependent_gammas()
+        object.__setattr__(self, "_initialized", True)
+
+    def __setattr__(self, name: str, value) -> None:
+        if (
+            name in {"gamma1", "gamma2"}
+            and "_initialized" in self.__dict__
+            and self.__dict__["_initialized"]
+        ):
+            raise AttributeError(
+                f"'{name}' is read-only. Update sigma0, intercepts, or slopes instead."
+            )
+
+        object.__setattr__(self, name, value)
+
+        # During dataclass initialization, dependent fields may not yet exist.
+        if "_initialized" not in self.__dict__ or not self.__dict__["_initialized"]:
+            return
+
+        if name in {
+            "sigma0",
+            "gamma1_intercept",
+            "gamma2_intercept",
+            "gamma1_sigma_slope",
+            "gamma2_sigma_slope",
+        }:
+            self._update_stress_dependent_gammas()
+
+    def _update_stress_dependent_gammas(self) -> None:
+        object.__setattr__(
+            self,
+            "gamma1",
+            float(self.gamma1_intercept) + self.gamma1_sigma_slope * self.sigma0,
+        )
+        object.__setattr__(
+            self,
+            "gamma2",
+            float(self.gamma2_intercept) + self.gamma2_sigma_slope * self.sigma0,
+        )

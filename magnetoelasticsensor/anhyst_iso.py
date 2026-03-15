@@ -6,12 +6,16 @@ magnetic hysteresis model.
 
 Equation
 --------
-Man = Ms * (coth((H + alpha*M)/a) - a/(H + alpha*M))
+Man = Ms * (coth(H_eff/a) - a/H_eff)
+
+with:
+
+H_eff = H + alpha*M + H_sigma
 
 Equivalent form
 ---------------
 Let:
-    x = (H + alpha*M) / a
+    x = H_eff / a
 
 Then:
     Man = Ms * (coth(x) - 1/x)
@@ -36,6 +40,9 @@ from __future__ import annotations
 import numpy as np
 
 from magnetoelasticsensor.ja_props import JAProps
+
+
+MU0 = 4.0e-7 * np.pi
 
 
 def anhysteretic_magnetization(
@@ -73,7 +80,8 @@ def anhysteretic_magnetization(
     h_arr = np.asarray(h, dtype=float)
     m_arr = np.asarray(m, dtype=float)
 
-    x = (h_arr + props.alpha * m_arr) / props.a
+    h_sigma = _stress_field(m_arr, props)
+    x = (h_arr + props.alpha * m_arr + h_sigma) / props.a
     man = props.ms * _langevin(x)
 
     if np.isscalar(h) and np.isscalar(m):
@@ -93,9 +101,9 @@ def anhysteretic_magnetization_differential(
 
     Formula::
 
-        dMan/dH = Ms * (a / (H + alpha*M)^2 - csch((H + alpha*M)/a)^2 / a)
+        dMan/dH = Ms * (a / H_eff^2 - csch(H_eff/a)^2 / a)
 
-    The direct closed form is numerically unstable near H + alpha*M = 0,
+    The direct closed form is numerically unstable near H_eff = 0,
     so the small-field limit is evaluated with the Langevin-series
     expansion, which yields dMan/dH -> Ms / (3a).
 
@@ -126,7 +134,8 @@ def anhysteretic_magnetization_differential(
     h_arr = np.asarray(h, dtype=float)
     m_arr = np.asarray(m, dtype=float)
 
-    x = (h_arr + props.alpha * m_arr) / props.a
+    h_sigma = _stress_field(m_arr, props)
+    x = (h_arr + props.alpha * m_arr + h_sigma) / props.a
     dman_dh = (props.ms / props.a) * _langevin_deriv(x)
 
     if np.isscalar(h) and np.isscalar(m):
@@ -228,3 +237,15 @@ def _langevin_deriv(x: np.ndarray | float) -> np.ndarray | float:
         return float(out)
 
     return out
+
+
+def _stress_field(m: np.ndarray, props: JAProps) -> np.ndarray:
+    """
+    Compute the stress-induced effective field contribution H_sigma.
+
+    H_sigma = [3 (cos(theta)^2 - nu sin(theta)^2)
+               (2 M gamma1 + 4 M^3 gamma2) sigma0] / (2 mu0)
+    """
+    angle_term = np.cos(props.theta) ** 2 - props.nu * np.sin(props.theta) ** 2
+    magnetoelastic_term = 2.0 * m * props.gamma1 + 4.0 * (m**3) * props.gamma2
+    return (3.0 * angle_term * magnetoelastic_term * props.sigma0) / (2.0 * MU0)
