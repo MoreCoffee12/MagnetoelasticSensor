@@ -41,7 +41,7 @@ The field in the target, internal magnetic field (H), changes with the applied m
 
 Jiles and Atherton built on this concept by noting that magnetization in ferromagnetic materials has hysteresis. For this reason, a complete description of the magnetization process must include reversible and irreversible processes. Their model begins with the anhysteretic curve, shown in the figure below.
 
-![Line drawing showing an ahysteretic B-H curve for a polycrystalline ferromagnetic material](media/Anhys ZeroFormal_1k_260316_173122.png)Line drawing showing an ahysteretic B-H curve for a polycrystalline ferromagnetic material. (original vector image from [Adobe Stock](https://stock.adobe.com/) File ID: [1950830608](https://stock.adobe.com/stock-photo/id/1950830608))
+![Line drawing showing an ahysteretic B-H curve for a polycrystalline ferromagnetic material](media/Anhys_ZeroFormal_1k_260316_173122.png)Line drawing showing an ahysteretic B-H curve for a polycrystalline ferromagnetic material. (original vector image from [Adobe Stock](https://stock.adobe.com/) File ID: [1950830608](https://stock.adobe.com/stock-photo/id/1950830608))
 
 More relevant to this discussion, they developed a model of the anhysteretic curve that incorporates stress effects, shown as a B-H curve in the figure below.
 
