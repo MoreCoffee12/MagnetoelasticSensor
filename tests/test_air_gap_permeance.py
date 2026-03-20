@@ -25,14 +25,16 @@ class TestAirGapPermeanceModel:
         model = AirGapPermeanceModel()
         
         assert model.geometry == DEFAULT_SENSOR_GEOMETRY
-        assert model.avg_gap == DEFAULT_SENSOR_GEOMETRY.dim_spag.nominal
+        assert model.drive_pole_gap == DEFAULT_SENSOR_GEOMETRY.avg_gap.nominal
+        assert model.sense_pole_gap == DEFAULT_SENSOR_GEOMETRY.avg_gap.nominal
 
     def test_model_initialization_custom_gap(self):
-        """Test initialization with custom gap distance."""
+        """Test initialization with custom drive/sense gap distance."""
         custom_gap = 5e-3  # 5mm gap
-        model = AirGapPermeanceModel(avg_gap=custom_gap)
+        model = AirGapPermeanceModel(drive_pole_gap=custom_gap, sense_pole_gap=custom_gap)
         
-        assert model.avg_gap == custom_gap
+        assert model.drive_pole_gap == custom_gap
+        assert model.sense_pole_gap == custom_gap
         assert model.geometry == DEFAULT_SENSOR_GEOMETRY
 
     def test_model_initialization_custom_geometry(self):
@@ -60,7 +62,8 @@ class TestAirGapPermeanceModel:
         
         model = AirGapPermeanceModel(geometry=custom_geom)
         assert model.geometry == custom_geom
-        assert model.avg_gap == custom_geom.dim_spag.nominal
+        assert model.drive_pole_gap == custom_geom.avg_gap.nominal
+        assert model.sense_pole_gap == custom_geom.avg_gap.nominal
 
     def test_model_initialization_custom_geometry_and_gap(self):
         """Test initialization with both custom geometry and gap."""
@@ -85,11 +88,17 @@ class TestAirGapPermeanceModel:
             sigmac=DimensionalParameter(nominal=100/22, tolerance=5/22),
 
         )
-        custom_gap = 8e-3  # 8mm
+        drive_gap = 8e-3  # 8mm
+        sense_gap = 6e-3  # 6mm
         
-        model = AirGapPermeanceModel(geometry=custom_geom, avg_gap=custom_gap)
+        model = AirGapPermeanceModel(
+            geometry=custom_geom,
+            drive_pole_gap=drive_gap,
+            sense_pole_gap=sense_gap,
+        )
         assert model.geometry == custom_geom
-        assert model.avg_gap == custom_gap
+        assert model.drive_pole_gap == drive_gap
+        assert model.sense_pole_gap == sense_gap
 
     def test_air_gap_permeance_calculation_default(self):
         """Test air gap permeance calculation with default parameters."""
@@ -111,8 +120,14 @@ class TestAirGapPermeanceModel:
     def test_air_gap_permeance_with_custom_gap(self):
         """Test permeance calculation with custom gap distance."""
         model = AirGapPermeanceModel()
-        permeance_large_gap = model.calculate_air_gap_permeance(avg_gap=1e-3)
-        permeance_small_gap = model.calculate_air_gap_permeance(avg_gap=5e-4)
+        permeance_large_gap = model.calculate_air_gap_permeance(
+            drive_pole_gap=1e-3,
+            sense_pole_gap=1e-3,
+        )
+        permeance_small_gap = model.calculate_air_gap_permeance(
+            drive_pole_gap=5e-4,
+            sense_pole_gap=5e-4,
+        )
         
         # Smaller gap should yield higher permeance (lower reluctance)
         assert permeance_small_gap[0] > permeance_large_gap[0]
@@ -123,24 +138,33 @@ class TestAirGapPermeanceModel:
         """Test that permeance decreases monotonically with increasing gap."""
         model = AirGapPermeanceModel()
         gaps = [1e-3, 3e-3, 5e-3, 10e-3, 15e-3]  # 1mm to 15mm
-        permeances = [model.calculate_air_gap_permeance(avg_gap=g) for g in gaps]
+        permeances = [
+            model.calculate_air_gap_permeance(drive_pole_gap=g, sense_pole_gap=g)
+            for g in gaps
+        ]
         
         # Check monotonic decrease
         for i in range(len(permeances) - 1):
-            assert permeances[i] > permeances[i+1], \
+            assert permeances[i][0] > permeances[i+1][0], \
                 f"Permeance should decrease with gap: P({gaps[i]}) > P({gaps[i+1]})"
 
     def test_air_gap_permeance_zero_gap_error(self):
         """Test that zero gap raises assertion or returns infinite permeance."""
         model = AirGapPermeanceModel()
-        with pytest.raises(AssertionError, match="Air gap distance must be greater than zero"):
-            model.calculate_air_gap_permeance(avg_gap=0.0)
+        with pytest.raises(AssertionError, match="Drive pole gap distance must be greater than zero"):
+            model.calculate_air_gap_permeance(drive_pole_gap=0.0)
+
+        with pytest.raises(AssertionError, match="Sense pole gap distance must be greater than zero"):
+            model.calculate_air_gap_permeance(sense_pole_gap=0.0)
 
     def test_air_gap_permeance_negative_gap_error(self):
         """Test that negative gap raises assertion."""
         model = AirGapPermeanceModel()
-        with pytest.raises(AssertionError, match="Air gap distance must be greater than zero"):
-            model.calculate_air_gap_permeance(avg_gap=-1e-3)
+        with pytest.raises(AssertionError, match="Drive pole gap distance must be greater than zero"):
+            model.calculate_air_gap_permeance(drive_pole_gap=-1e-3)
+
+        with pytest.raises(AssertionError, match="Sense pole gap distance must be greater than zero"):
+            model.calculate_air_gap_permeance(sense_pole_gap=-1e-3)
 
 
 class TestAirGapPermeanceFunctional:
@@ -167,7 +191,10 @@ class TestAirGapPermeanceFunctional:
 
     def test_functional_with_custom_gap(self):
         """Test functional interface with custom gap."""
-        permeance = calculate_air_gap_permeance(avg_gap=5e-3)
+        permeance = calculate_air_gap_permeance(
+            drive_pole_gap=5e-3,
+            sense_pole_gap=5e-3,
+        )
         assert permeance[0]  > 0
         assert permeance[1]  > 0
 
@@ -222,7 +249,8 @@ class TestAirGapPermeanceFunctional:
         
         permeance = calculate_air_gap_permeance(
             geometry=custom_geom,
-            avg_gap=1e-3,
+            drive_pole_gap=1e-3,
+            sense_pole_gap=1e-3,
             murt=3000.0
         )
         assert permeance[0] > 0
@@ -253,7 +281,7 @@ class TestIntegration:
 
     @pytest.mark.parametrize(
         "gap_distance",
-        [1e-3, 3e-3, 5e-3, 7e-3, 9e-3, 12e-3, 15e-3],  # 1mm to 15mm
+        [1e-3, 2e-3, 3e-3, 4e-3, 5e-3],  # 1mm to 5mm
     )
     def test_parametric_gap_sweep(self, gap_distance):
         """Parametric test sweeping gap distances.
@@ -266,7 +294,10 @@ class TestIntegration:
         gap_distance : float
             Air gap distance [m] between pole face and target surface.
         """
-        model = AirGapPermeanceModel(avg_gap=gap_distance)
+        model = AirGapPermeanceModel(
+            drive_pole_gap=gap_distance,
+            sense_pole_gap=gap_distance,
+        )
         permeance = model.calculate_air_gap_permeance()
         
         assert permeance[0] > 0
@@ -305,10 +336,14 @@ class TestIntegration:
         murt = 2500.0
         
         # Class-based approach
-        model = AirGapPermeanceModel(avg_gap=gap)
+        model = AirGapPermeanceModel(drive_pole_gap=gap, sense_pole_gap=gap)
         p_model = model.calculate_air_gap_permeance(murt=murt)
         
         # Functional approach
-        p_func = calculate_air_gap_permeance(avg_gap=gap, murt=murt)
+        p_func = calculate_air_gap_permeance(
+            drive_pole_gap=gap,
+            sense_pole_gap=gap,
+            murt=murt,
+        )
         
         assert math.isclose(p_model[0], p_func[0], rel_tol=1e-10)

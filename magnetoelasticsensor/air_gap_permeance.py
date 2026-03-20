@@ -10,7 +10,7 @@ The air gap permeance must account for:
 - Geometric fringing effects at pole faces
 - Target material proximity and alignment
 - Pole face area and shape
-- Average gap distance between pole and target surface
+- Distinct drive and sense pole gap distances to the target surface
 
 Reference: Fleming magnetic circuit analysis, Kleinke eddy current formulation
 B. Howard
@@ -44,7 +44,13 @@ class AirGapPermeanceModel:
       SAE Technical Paper 890482, 1989. https://doi.org/10.4271/890482
     """
     
-    def __init__(self, geometry: SensorGeometry = None, avg_gap: float | None = None):
+    def __init__(
+        self,
+        geometry: SensorGeometry = None,
+        drive_pole_gap: float | None = None,
+        sense_pole_gap: float | None = None,
+        avg_gap: float | None = None,
+    ):
         """
         Initialize air gap permeance model with sensor geometry and gap distance.
         
@@ -52,21 +58,34 @@ class AirGapPermeanceModel:
         ----------
         geometry : SensorGeometry, optional
             Sensor geometry parameters. If None, uses DEFAULT_SENSOR_GEOMETRY.
+        drive_pole_gap : float, optional
+            Drive pole gap distance to target surface [m].
+        sense_pole_gap : float, optional
+            Sense pole gap distance to target surface [m].
         avg_gap : float, optional
-            Average gap distance between pole faces and target surface [m].
-            If None, uses geometry.dim_spag.nominal as default gap.
+            Backward-compatible single-gap override [m]. Used for both poles
+            when pole-specific values are not provided.
         """
         if geometry is None:
             geometry = DEFAULT_SENSOR_GEOMETRY
         self.geometry = geometry
         
-        if avg_gap is None:
-            avg_gap = geometry.dim_spag.nominal
-        self.avg_gap = avg_gap
+        default_gap = geometry.avg_gap.nominal
+
+        if avg_gap is not None:
+            if drive_pole_gap is None:
+                drive_pole_gap = avg_gap
+            if sense_pole_gap is None:
+                sense_pole_gap = avg_gap
+
+        self.drive_pole_gap = default_gap if drive_pole_gap is None else drive_pole_gap
+        self.sense_pole_gap = default_gap if sense_pole_gap is None else sense_pole_gap
     
     def calculate_air_gap_permeance(
         self,
         *,
+        drive_pole_gap: float | None = None,
+        sense_pole_gap: float | None = None,
         avg_gap: float | None = None,
         muo: float | None = None,
         murt: float | None = None,
@@ -84,8 +103,13 @@ class AirGapPermeanceModel:
         
         Parameters
         ----------
+        drive_pole_gap : float, optional
+            Drive pole gap override [m]. If None, uses model default.
+        sense_pole_gap : float, optional
+            Sense pole gap override [m]. If None, uses model default.
         avg_gap : float, optional
-            Average gap distance override [m]. If None, uses self.avg_gap.
+            Backward-compatible single-gap override [m]. Applied to both poles
+            if the corresponding pole-specific gap is not provided.
         muo : float, optional
             Vacuum permeability override [H/m]. If None, uses geometry.muo.
         murt : float, optional
@@ -100,7 +124,14 @@ class AirGapPermeanceModel:
             
         """
         # Use provided overrides or defaults
-        d_gap_avg = self.geometry.avg_gap.nominal if avg_gap is None else avg_gap
+        if avg_gap is not None:
+            if drive_pole_gap is None:
+                drive_pole_gap = avg_gap
+            if sense_pole_gap is None:
+                sense_pole_gap = avg_gap
+
+        d_gap_drive = self.drive_pole_gap if drive_pole_gap is None else drive_pole_gap
+        d_gap_sense = self.sense_pole_gap if sense_pole_gap is None else sense_pole_gap
         muo = self.geometry.muo.nominal if muo is None else muo
         murt = self.geometry.murt.nominal if murt is None else murt
         
@@ -111,7 +142,8 @@ class AirGapPermeanceModel:
         dimspagi = self.geometry.dim_spag.nominal # Distance between poles [m]
         
         # Basic sanity checks       
-        assert d_gap_avg > 0, "Air gap distance must be greater than zero."
+        assert d_gap_drive > 0, "Drive pole gap distance must be greater than zero."
+        assert d_gap_sense > 0, "Sense pole gap distance must be greater than zero."
         assert muo > 0, "Vacuum permeability must be greater than zero."
         assert murt > 0, "Target relative permeability must be greater than zero."
         
@@ -119,12 +151,12 @@ class AirGapPermeanceModel:
         P0s = calculate_pole_face_permeance(
             pole_diameter=dimspi,
             vacuum_permeability=muo,
-            gap_distance=d_gap_avg,
+            gap_distance=d_gap_sense,
         )
         P0d = calculate_pole_face_permeance(
             pole_diameter=dimdp,
             vacuum_permeability=muo,
-            gap_distance=d_gap_avg,
+            gap_distance=d_gap_drive,
         )
 
         # Calculate fringing field correction for sense pole, using a simplified model
@@ -132,25 +164,25 @@ class AirGapPermeanceModel:
         P1s = calculate_pole_edge_fringing_permeance(
             pole_diameter=dimspi,
             vacuum_permeability=muo,
-            gap_distance=d_gap_avg,
+            gap_distance=d_gap_sense,
         )
         P1d = calculate_pole_edge_fringing_permeance(
             pole_diameter=dimdp,
             vacuum_permeability=muo,
-            gap_distance=d_gap_avg,
+            gap_distance=d_gap_drive,
         )
 
         # Calculate the permeance at the sides of the pole. First sense, then drive
         P2s = calculate_pole_side_permeance(
             pole_diameter=dimspi,
             vacuum_permeability=muo,
-            gap_distance=d_gap_avg,
+            gap_distance=d_gap_sense,
             pole_spacing=dimspagi,
         )
         P2d = calculate_pole_side_permeance(
             pole_diameter=dimdp,
             vacuum_permeability=muo,
-            gap_distance=d_gap_avg,
+            gap_distance=d_gap_drive,
             pole_spacing=dimspagi,
         )
 
@@ -250,6 +282,8 @@ def calculate_pole_edge_fringing_permeance(
 
 def calculate_air_gap_permeance(
     geometry: SensorGeometry = None,
+    drive_pole_gap: float | None = None,
+    sense_pole_gap: float | None = None,
     avg_gap: float | None = None,
     **kwargs
 ) -> float:
@@ -260,8 +294,13 @@ def calculate_air_gap_permeance(
     ----------
     geometry : SensorGeometry, optional
         Sensor geometry. If None, uses DEFAULT_SENSOR_GEOMETRY.
+    drive_pole_gap : float, optional
+        Drive pole gap distance [m].
+    sense_pole_gap : float, optional
+        Sense pole gap distance [m].
     avg_gap : float, optional
-        Average gap distance [m]. If None, uses geometry.dim_spag.nominal.
+        Backward-compatible single-gap value [m], applied to both poles if
+        pole-specific gaps are not provided.
     **kwargs
         Additional keyword arguments passed to AirGapPermeanceModel.calculate_air_gap_permeance()
         (e.g., muo, murt overrides).
@@ -271,5 +310,10 @@ def calculate_air_gap_permeance(
     float
         Air gap permeance [H].
     """
-    model = AirGapPermeanceModel(geometry=geometry, avg_gap=avg_gap)
+    model = AirGapPermeanceModel(
+        geometry=geometry,
+        drive_pole_gap=drive_pole_gap,
+        sense_pole_gap=sense_pole_gap,
+        avg_gap=avg_gap,
+    )
     return model.calculate_air_gap_permeance(**kwargs)
