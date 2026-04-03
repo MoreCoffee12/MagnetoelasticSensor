@@ -445,19 +445,19 @@ class TestEquivalentPermeance:
 
     def test_equivalent_permeance_equal_values(self):
         """Test equivalent permeance with equal permeance values."""
-        p = 1e-8  # 10 nH
-        result = calculate_equivalent_permeance(p_core=p, p=p, p_sd=p)
+        p_eff = 1e-8  # 10 nH
+        result = calculate_equivalent_permeance(p_core=p_eff, p_eff=p_eff, p_sd=p_eff)
         
         # For equal values: P_eq = 1 / (1/P + 3/(P + 3*P)) = 1 / (1/P + 3/(4*P)) = 1 / (1/P + 3/(4*P))
         # = 1 / ((4 + 3)/(4*P)) = 4*P/7
-        expected = 4.0 * p / 7.0
+        expected = 4.0 * p_eff / 7.0
         assert math.isclose(result, expected, rel_tol=1e-10)
 
     def test_equivalent_permeance_default_values(self):
         """Test with realistic magnetoelastic sensor permeance values."""
         pt, p3 = calculate_target_permeance()
         p_gaps, p_gapd = calculate_air_gap_permeance()
-        p = calculate_effective_permeance(pt=pt, p_gapd=p_gapd, p_gaps=p_gaps)
+        p_eff = calculate_effective_permeance(pt=pt, p_gapd=p_gapd, p_gaps=p_gaps)
 
         model = CorePermeanceModel()
         p_core = model.calculate_core_permeance()
@@ -465,11 +465,11 @@ class TestEquivalentPermeance:
         model = CrossLeakagePermeanceModel()
         p_sd = model.calculate_cross_leakage_permeance()
         
-        result = calculate_equivalent_permeance(p_core=p_core, p=p, p_sd=p_sd)
+        result = calculate_equivalent_permeance(p_core=p_core, p_eff=p_eff, p_sd=p_sd)
         
-        # Manual calculation: P_eq = 1 / (1/p_core + 3/(p*(1/p + 3/p_sd)*p_sd))
+        # Manual calculation: P_eq = 1 / (1/p_core + 3/(p_eff*(1/p_eff + 3/p_sd)*p_sd))
         term1 = 1.0 / p_core
-        term2 = 3.0 / (p * ((1.0 / p) + (3.0 / p_sd)) * p_sd    )
+        term2 = 3.0 / (p_eff * ((1.0 / p_eff) + (3.0 / p_sd)) * p_sd    )
         expected = 1.0 / (term1 + term2)
         
         assert math.isclose(result, expected, rel_tol=1e-10)
@@ -487,17 +487,17 @@ class TestEquivalentPermeance:
             (1e-6, 1e-9, 1e-10),
         ]
         
-        for p_core, p, p_sd in test_cases:
-            result = calculate_equivalent_permeance(p_core=p_core, p=p, p_sd=p_sd)
+        for p_core, p_eff, p_sd in test_cases:
+            result = calculate_equivalent_permeance(p_core=p_core, p_eff=p_eff, p_sd=p_sd)
             assert result > 0
 
     def test_equivalent_permeance_less_than_core(self):
         """Test that equivalent permeance is always less than core permeance."""
         p_core = 1e-7
-        p = 5e-8
+        p_eff = 5e-8
         p_sd = 2e-9
         
-        result = calculate_equivalent_permeance(p_core=p_core, p=p, p_sd=p_sd)
+        result = calculate_equivalent_permeance(p_core=p_core, p_eff=p_eff, p_sd=p_sd)
         
         # Equivalent permeance must be less than core permeance (series element)
         assert result < p_core
@@ -505,15 +505,15 @@ class TestEquivalentPermeance:
     def test_equivalent_permeance_simplified_formula(self):
         """Verify simplified formula matches original form."""
         p_core = 1.5e-8
-        p = 8e-9
+        p_eff = 8e-9
         p_sd = 5e-10
         
         # Using simplified form
-        result = calculate_equivalent_permeance(p_core=p_core, p=p, p_sd=p_sd)
+        result = calculate_equivalent_permeance(p_core=p_core, p_eff=p_eff, p_sd=p_sd)
         
         # Calculate using original form: 1/(1/P_core + 3/(P*(1/P + 3/P_sd)*P_sd))
-        inner_term = (1.0/p) + (3.0/p_sd)
-        original_term2 = 3.0 / (p * inner_term * p_sd)
+        inner_term = (1.0/p_eff) + (3.0/p_sd)
+        original_term2 = 3.0 / (p_eff * inner_term * p_sd)
         expected_original = 1.0 / ((1.0/p_core) + original_term2)
         
         assert math.isclose(result, expected_original, rel_tol=1e-10)
@@ -521,41 +521,41 @@ class TestEquivalentPermeance:
     def test_equivalent_permeance_raises_for_zero_p_core(self):
         """Test that ValueError is raised when p_core = 0."""
         with pytest.raises(ValueError, match="All permeances must be positive"):
-            calculate_equivalent_permeance(p_core=0, p=1e-8, p_sd=1e-9)
+            calculate_equivalent_permeance(p_core=0, p_eff=1e-8, p_sd=1e-9)
 
-    def test_equivalent_permeance_raises_for_zero_p(self):
-        """Test that ValueError is raised when p = 0."""
+    def test_equivalent_permeance_raises_for_zero_p_eff(self):
+        """Test that ValueError is raised when p_eff = 0."""
         with pytest.raises(ValueError, match="All permeances must be positive"):
-            calculate_equivalent_permeance(p_core=1e-8, p=0, p_sd=1e-9)
+            calculate_equivalent_permeance(p_core=1e-8, p_eff=0, p_sd=1e-9)
 
     def test_equivalent_permeance_raises_for_zero_p_sd(self):
         """Test that ValueError is raised when p_sd = 0."""
         with pytest.raises(ValueError, match="All permeances must be positive"):
-            calculate_equivalent_permeance(p_core=1e-8, p=1e-9, p_sd=0)
+            calculate_equivalent_permeance(p_core=1e-8, p_eff=1e-9, p_sd=0)
 
     def test_equivalent_permeance_raises_for_negative_p_core(self):
         """Test that ValueError is raised when p_core < 0."""
         with pytest.raises(ValueError, match="All permeances must be positive"):
-            calculate_equivalent_permeance(p_core=-1e-8, p=1e-9, p_sd=1e-10)
+            calculate_equivalent_permeance(p_core=-1e-8, p_eff=1e-9, p_sd=1e-10)
 
-    def test_equivalent_permeance_raises_for_negative_p(self):
-        """Test that ValueError is raised when p < 0."""
+    def test_equivalent_permeance_raises_for_negative_p_eff(self):
+        """Test that ValueError is raised when p_eff < 0."""
         with pytest.raises(ValueError, match="All permeances must be positive"):
-            calculate_equivalent_permeance(p_core=1e-8, p=-1e-9, p_sd=1e-10)
+            calculate_equivalent_permeance(p_core=1e-8, p_eff=-1e-9, p_sd=1e-10)
 
     def test_equivalent_permeance_raises_for_negative_p_sd(self):
         """Test that ValueError is raised when p_sd < 0."""
         with pytest.raises(ValueError, match="All permeances must be positive"):
-            calculate_equivalent_permeance(p_core=1e-8, p=1e-9, p_sd=-1e-10)
+            calculate_equivalent_permeance(p_core=1e-8, p_eff=1e-9, p_sd=-1e-10)
 
     def test_equivalent_permeance_small_cross_leakage_effect(self):
         """Test that small cross-leakage permeance reduces equivalent permeance."""
         p_core = 1e-7
-        p = 5e-8
+        p_eff = 5e-8
         
         # Compare with large vs small cross-leakage
-        result_large_psd = calculate_equivalent_permeance(p_core=p_core, p=p, p_sd=1e-8)
-        result_small_psd = calculate_equivalent_permeance(p_core=p_core, p=p, p_sd=1e-10)
+        result_large_psd = calculate_equivalent_permeance(p_core=p_core, p_eff=p_eff, p_sd=1e-8)
+        result_small_psd = calculate_equivalent_permeance(p_core=p_core, p_eff=p_eff, p_sd=1e-10)
         
         # Smaller cross-leakage means more series reluctance, so lower total permeance
         assert result_small_psd < result_large_psd
@@ -563,20 +563,20 @@ class TestEquivalentPermeance:
     def test_equivalent_permeance_large_p_dominates(self):
         """Test behavior when branch permeance P is much larger than cross-leakage."""
         p_core = 1e-7
-        p_large = 1e-6  # Very large branch permeance
+        p_eff = 1e-6  # Very large branch permeance
         p_sd = 1e-10  # Small cross-leakage
         
-        result = calculate_equivalent_permeance(p_core=p_core, p=p_large, p_sd=p_sd)
+        result = calculate_equivalent_permeance(p_core=p_core, p_eff=p_eff, p_sd=p_sd)
         
         # When P >> P_sd: (P_sd + 3*P) ≈ 3*P, so term2 ≈ 3/(3*P) = 1/P
         # Then: P_eq ≈ 1/(1/P_core + 1/P) which is series combination
-        approx_expected = 1.0 / ((1.0/p_core) + (1.0/p_large))
+        approx_expected = 1.0 / ((1.0/p_core) + (1.0/p_eff))
         
         # Should be close to this approximation
         assert math.isclose(result, approx_expected, rel_tol=0.01)
 
     @pytest.mark.parametrize(
-        "p_core,p,p_sd",
+        "p_core,p_eff,p_sd",
         [
             (1e-8, 5e-9, 1e-9),
             (1.2e-8, 4.5e-9, 3e-10),
@@ -584,9 +584,9 @@ class TestEquivalentPermeance:
             (1e-7, 1e-9, 1e-11),
         ],
     )
-    def test_equivalent_permeance_parametric(self, p_core, p, p_sd):
+    def test_equivalent_permeance_parametric(self, p_core, p_eff, p_sd):
         """Test equivalent permeance calculation with various parameter combinations."""
-        result = calculate_equivalent_permeance(p_core=p_core, p=p, p_sd=p_sd)
+        result = calculate_equivalent_permeance(p_core=p_core, p_eff=p_eff, p_sd=p_sd)
         
         # Verify result is positive and less than core permeance
         assert result > 0
@@ -596,13 +596,13 @@ class TestEquivalentPermeance:
     def test_equivalent_permeance_formula_verification(self):
         """Verify the mathematical formula: P_eq = 1/(1/P_core + 3/(P_sd + 3*P))."""
         p_core = 1.8e-8
-        p = 7e-9
+        p_eff = 7e-9
         p_sd = 4e-10
         
-        result = calculate_equivalent_permeance(p_core=p_core, p=p, p_sd=p_sd)
+        result = calculate_equivalent_permeance(p_core=p_core, p_eff=p_eff, p_sd=p_sd)
         
         # Direct formula calculation
-        expected = 1.0 / ((1.0/p_core) + (3.0/(p_sd + 3.0*p)))
+        expected = 1.0 / ((1.0/p_core) + (3.0/(p_sd + 3.0*p_eff)))
         
         assert math.isclose(result, expected, rel_tol=1e-12)
 

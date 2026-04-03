@@ -220,7 +220,7 @@ def calculate_effective_permeance(
 
 def calculate_equivalent_permeance(
     p_core: float,
-    p: float,
+    p_eff: float,
     p_sd: float
 ) -> float:
     """
@@ -228,16 +228,16 @@ def calculate_equivalent_permeance(
     
     This equation represents the combined permeance of a magnetic circuit with
     core permeance (P_core) in series with three parallel branches, where each
-    branch has permeance P in series with cross-leakage permeance P_sd.
+    branch has permeance P_eff in series with cross-leakage permeance P_sd.
     
     Original form:
-        P_eq = 1 / (1/P_core + 3/(P*(1/P + 3/P_sd)*P_sd))
+        P_eq = 1 / (1/P_core + 3/(P_eff*(1/P_eff + 3/P_sd)*P_sd))
     
     Parameters
     ----------
     p_core : float
         Core permeance [H].
-    p : float
+    p_eff : float
         Branch permeance [H] (typically air gap or target permeance).
     p_sd : float
         Cross-leakage permeance [H] between sense and drive branches.
@@ -260,12 +260,12 @@ def calculate_equivalent_permeance(
     The expression (P_sd + 3*P) represents the combined reluctance of the
     parallel branch network.
     """
-    if p_core <= 0 or p <= 0 or p_sd <= 0:
+    if p_core <= 0 or p_eff <= 0 or p_sd <= 0:
         raise ValueError(
-            f"All permeances must be positive: p_core={p_core}, p={p}, p_sd={p_sd}"
+            f"All permeances must be positive: p_core={p_core}, p_eff={p_eff}, p_sd={p_sd}"
         )
     
-    return 1/(1/p_core + 3/(p*(1/p + 3/p_sd)*p_sd))
+    return 1/(1/p_core + 3/(p_eff*(1/p_eff + 3/p_sd)*p_sd))
 
 
 

@@ -44,6 +44,42 @@ def calculate_mutual_path_denominator(
     return 3.0 * p_eff + 3.0 * p_core + p_sd
 
 
+def calculate_mutual_permeance(
+    p_eff: float,
+    p_core: float,
+    p_sd: float,
+) -> float:
+    """Calculate the mutual permeance term used in transimpedance modeling.
+
+    The mutual permeance is computed from the effective permeance, core
+    permeance, and cross-leakage permeance:
+        pm = (3 * p_eff * p_core) / md
+    where:
+        md = 3 * p_eff + 3 * p_core + p_sd
+
+    Parameters
+    ----------
+    p_eff : float
+        Effective permeance [H]. Must be positive.
+    p_core : float
+        Core permeance [H]. Must be positive.
+    p_sd : float
+        Cross-leakage permeance [H]. Must be positive.
+
+    Returns
+    -------
+    float
+        Mutual permeance pm [H].
+
+    Raises
+    ------
+    ValueError
+        If any input permeance is non-positive.
+    """
+    md = calculate_mutual_path_denominator(p_eff=p_eff, p_core=p_core, p_sd=p_sd)
+    return (3.0 * p_eff * p_core) / md
+
+
 def calculate_normalized_impedance(
     p3: float,
     p_sd: float,
@@ -107,8 +143,7 @@ def calculate_normalized_impedance(
     q = p_sd/(3.0 *p_core)
 
     # Calculate the mutual permeance ratio
-    md = calculate_mutual_path_denominator(p_eff=p_eff, p_core=p_core, p_sd=p_sd)
-    pm = (3.0 * p_eff * p_core) / md
+    pm = calculate_mutual_permeance(p_eff=p_eff, p_core=p_core, p_sd=p_sd)
 
     # Calculate the normalized target parameters
     x = p3 / ( ( 1 + q) * pm )
@@ -123,7 +158,7 @@ def calculate_transimpedance(
     omega: float,
     p3: float,
     p_sd: float,
-    p: float,
+    p_eff : float,
     et: float,
     p_core: float,
 ) -> complex:
@@ -164,9 +199,9 @@ def calculate_transimpedance(
         Target eddy-current permeance [H].
     p_sd : float
         Cross-leakage permeance [H].
-    p : float
+    p_eff : float
         Effective permeance [H].
-    epsilon : float
+    et : float
         Frequency-dependent damping factor [dimensionless].
     p_core : float
         Core permeance [H].
@@ -208,13 +243,16 @@ def calculate_transimpedance(
     z = calculate_normalized_impedance(
         p3=p3,
         p_sd=p_sd,
-        p=p,
+        p_eff=p_eff,
         et=et,
         p_core=p_core,
     )
-    
-    # Calculate transimpedance: Vs/Id = j * Nd * Ns * P_eq * ω * z
-    transimpedance = j * nd * ns * p_eq * omega * z
+
+    # Calculate the mutual permeance ratio
+    pm = calculate_mutual_permeance(p_eff=p_eff, p_core=p_core, p_sd=p_sd)
+
+    # Calculate transimpedance: Vs/Id = j * Nd * Ns * pm * ω * z
+    transimpedance = j * nd * ns * pm * omega * z
     
     return transimpedance
 
@@ -226,7 +264,7 @@ def calculate_transimpedance_magnitude(
     omega: float,
     p3: float,
     p_sd: float,
-    p: float,
+    p_eff: float,
     et: float,
     p_core: float,
 ) -> float:
@@ -269,7 +307,7 @@ def calculate_transimpedance_magnitude(
         omega=omega,
         p3=p3,
         p_sd=p_sd,
-        p=p,
+        p_eff=p_eff,
         et=et,
         p_core=p_core,
     )
@@ -284,7 +322,7 @@ def calculate_transimpedance_phase(
     omega: float,
     p3: float,
     p_sd: float,
-    p: float,
+    p_eff: float,
     et: float,
     p_core: float,
 ) -> float:
@@ -308,7 +346,7 @@ def calculate_transimpedance_phase(
         Target eddy-current permeance [H].
     p_sd : float
         Cross-leakage permeance [H].
-    p : float
+    p_eff : float
         Effective permeance [H].
     et : float
         Target impedance phase parameter [dimensionless].
@@ -329,7 +367,7 @@ def calculate_transimpedance_phase(
         omega=omega,
         p3=p3,
         p_sd=p_sd,
-        p=p,
+        p_eff=p_eff,
         et=et,
         p_core=p_core,
     )
