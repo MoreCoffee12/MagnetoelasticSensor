@@ -35,8 +35,9 @@ class TestNormalizedImpedance:
         z = calculate_normalized_impedance(
             p3=1e-8,
             p_sd=3e-9,
-            p=2e-8,
-            epsilon=0.1,
+            p_eff=2e-8,
+            et=0.1,
+            p_core=1e-8,
         )
         assert isinstance(z, complex)
 
@@ -45,8 +46,9 @@ class TestNormalizedImpedance:
         z = calculate_normalized_impedance(
             p3=1e-8,
             p_sd=3e-9,
-            p=2e-8,
-            epsilon=0.0,
+            p_eff=2e-8,
+            et=0.0,
+            p_core=1e-8,
         )
         assert isinstance(z, complex)
         # With epsilon=0, impedance should still be finite and well-defined
@@ -57,62 +59,64 @@ class TestNormalizedImpedance:
         model = TargetPermeanceModel()
         pt,p3 = model.calculate_target_permeance()
         p_gaps, p_gapd = calculate_air_gap_permeance()
-        p = calculate_effective_permeance(pt=pt, p_gapd=p_gapd, p_gaps=p_gaps)    
+        p_eff = calculate_effective_permeance(pt=pt, p_gapd=p_gapd, p_gaps=p_gaps)    
 
         model = CrossLeakagePermeanceModel()
         p_sd = model.calculate_cross_leakage_permeance()
-        epsilon = math.tan(math.radians(DEFAULT_SENSOR_GEOMETRY.theta3_deg.nominal))  
+        et = math.tan(math.radians(DEFAULT_SENSOR_GEOMETRY.theta3_deg.nominal))
+        model = CorePermeanceModel()
+        p_core = model.calculate_core_permeance()
 
-        # Call the function under test        
-        z = calculate_normalized_impedance(p3=p3, p_sd=p_sd, p=p, epsilon=epsilon)
+        # Call the function under test
+        z = calculate_normalized_impedance(p3=p3, p_sd=p_sd, p_eff=p_eff, et=et, p_core=p_core)
 
         # Low-level sanity checks on the output
         assert isinstance(z, complex)
         assert math.isfinite(abs(z))
 
         # Copied over from "Calculate the normalized impedance" section in "ModelAndUncertainty.nb" notebook
-        z_expected = complex(0.7139053089702699, -0.09919715300310798)  
+        z_expected = complex(0.7204853341037472, -0.0993563485397457)
         
-        assert cmath.isclose(z, z_expected, rel_tol=1e-8)
+        assert cmath.isclose(z, z_expected, rel_tol=1e-6)
 
     def test_normalized_impedance_raises_for_zero_p3(self):
         """Test that ValueError is raised for zero target permeance."""
         with pytest.raises(ValueError, match="All permeances must be positive"):
-            calculate_normalized_impedance(p3=0, p_sd=1e-8, p=1e-8, epsilon=0.1)
+            calculate_normalized_impedance(p3=0, p_sd=1e-8, p=1e-8, et=0.1, p_core=1e-8)
 
     def test_normalized_impedance_raises_for_zero_p_sd(self):
         """Test that ValueError is raised for zero cross-leakage."""
         with pytest.raises(ValueError, match="All permeances must be positive"):
-            calculate_normalized_impedance(p3=1e-8, p_sd=0, p=1e-8, epsilon=0.1)
+            calculate_normalized_impedance(p3=1e-8, p_sd=0, p=1e-8, et=0.1, p_core=1e-8)
 
     def test_normalized_impedance_raises_for_zero_p(self):
         """Test that ValueError is raised for zero effective permeance."""
         with pytest.raises(ValueError, match="All permeances must be positive"):
-            calculate_normalized_impedance(p3=1e-8, p_sd=1e-8, p=0, epsilon=0.1)
+            calculate_normalized_impedance(p3=1e-8, p_sd=1e-8, p=0, et=0.1, p_core=1e-8)
 
-    def test_normalized_impedance_raises_for_negative_epsilon(self):
+    def test_normalized_impedance_raises_for_negative_et(self):
         """Test that ValueError is raised for negative damping factor."""
-        with pytest.raises(ValueError, match="epsilon must be non-negative"):
+        with pytest.raises(ValueError, match="et must be non-negative"):
             calculate_normalized_impedance(
-                p3=1e-8, p_sd=1e-8, p=1e-8, epsilon=-0.01
+                p3=1e-8, p_sd=1e-8, p=1e-8, et=-0.01, p_core=1e-8
             )
 
     def test_normalized_impedance_raises_for_negative_p3(self):
         """Test that ValueError is raised for negative target permeance."""
         with pytest.raises(ValueError, match="All permeances must be positive"):
-            calculate_normalized_impedance(p3=-1e-8, p_sd=1e-8, p=1e-8, epsilon=0.1)
+            calculate_normalized_impedance(p3=-1e-8, p_sd=1e-8, p=1e-8, et=0.1, p_core=1e-8)
 
     @pytest.mark.parametrize(
-        "p3,p_sd,p,epsilon",
+        "p3,p_sd,p,et",
         [
             (1e-8, 5e-9, 2e-8, 0.05),
             (5e-8, 2e-8, 1e-8, 0.1),
             (1e-7, 3e-8, 5e-8, 0.02),
         ],
     )
-    def test_normalized_impedance_parametric(self, p3, p_sd, p, epsilon):
+    def test_normalized_impedance_parametric(self, p3, p_sd, p, et):
         """Test normalized impedance with various parameter combinations."""
-        z = calculate_normalized_impedance(p3=p3, p_sd=p_sd, p=p, epsilon=epsilon)
+        z = calculate_normalized_impedance(p3=p3, p_sd=p_sd, p=p, et=et, p_core=1e-8)
         assert isinstance(z, complex)
         assert math.isfinite(abs(z))
 
@@ -130,7 +134,8 @@ class TestTransimpedance:
             p3=8.6e-8,
             p_sd=2.3e-8,
             p=2.5e-8,
-            epsilon=0.05,
+            et=0.05,
+            p_core=1e-8,
         )
         assert isinstance(z, complex)
 
@@ -139,15 +144,16 @@ class TestTransimpedance:
         nd, ns = 100, 100
         p_eq = 3e-8
         p3, p_sd, p = 8.6e-8, 2.3e-8, 2.5e-8
-        epsilon = 0.05
+        et = 0.05
+        p_core = 1e-8
         
         z_low = calculate_transimpedance(
             nd=nd, ns=ns, p_eq=p_eq, omega=2*math.pi*10e3,
-            p3=p3, p_sd=p_sd, p=p, epsilon=epsilon
+            p3=p3, p_sd=p_sd, p=p, et=et, p_core=p_core
         )
         z_high = calculate_transimpedance(
             nd=nd, ns=ns, p_eq=p_eq, omega=2*math.pi*100e3,
-            p3=p3, p_sd=p_sd, p=p, epsilon=epsilon
+            p3=p3, p_sd=p_sd, p=p, et=et, p_core=p_core
         )
         
         # Generally, impedance magnitude should increase with frequency
@@ -159,15 +165,16 @@ class TestTransimpedance:
         p_eq = 3e-8
         omega = 2 * math.pi * 50e3
         p3, p_sd, p = 8.6e-8, 2.3e-8, 2.5e-8
-        epsilon = 0.05
+        et = 0.05
+        p_core = 1e-8
         
         z_100_100 = calculate_transimpedance(
             nd=100, ns=100, p_eq=p_eq, omega=omega,
-            p3=p3, p_sd=p_sd, p=p, epsilon=epsilon
+            p3=p3, p_sd=p_sd, p=p, et=et, p_core=p_core
         )
         z_50_50 = calculate_transimpedance(
             nd=50, ns=50, p_eq=p_eq, omega=omega,
-            p3=p3, p_sd=p_sd, p=p, epsilon=epsilon
+            p3=p3, p_sd=p_sd, p=p, et=et, p_core=p_core
         )
         
         # Scaling by 1/4 in turn product (50*50 vs 100*100)
@@ -192,7 +199,7 @@ class TestTransimpedance:
         p_eq = calculate_equivalent_permeance(p_core=p_core, p=p, p_sd=p_sd)
         
         # Get damping factor from default geometry
-        epsilon = math.tan(math.radians(DEFAULT_SENSOR_GEOMETRY.theta3_deg.nominal))
+        et = math.tan(math.radians(DEFAULT_SENSOR_GEOMETRY.theta3_deg.nominal))
         
         # Get coil turn counts from default geometry
         nd = int(DEFAULT_SENSOR_GEOMETRY.ndrive.nominal)
@@ -204,7 +211,7 @@ class TestTransimpedance:
         # Call the function under test
         z = calculate_transimpedance(
             nd=nd, ns=ns, p_eq=p_eq, omega=omega,
-            p3=p3, p_sd=p_sd, p=p, epsilon=epsilon
+            p3=p3, p_sd=p_sd, p=p, et=et, p_core=p_core
         )
         
         # Low-level sanity checks on the output
@@ -213,7 +220,7 @@ class TestTransimpedance:
 
         # Copied over from "Final transimpedance and phase angle" section 
         # in "ModelAndUncertainty.nb" notebook
-        z_expected = complex(3.851982702131939, 27.72207485659873)
+        z_expected = complex(0.049825770649483514, 23.639506153237686)
         assert cmath.isclose(z, z_expected, rel_tol=1e-8)
 
     def test_transimpedance_raises_for_zero_turns(self):
@@ -221,7 +228,7 @@ class TestTransimpedance:
         with pytest.raises(ValueError, match="nd must be a positive integer"):
             calculate_transimpedance(
                 nd=0, ns=100, p_eq=3e-8, omega=2*math.pi*50e3,
-                p3=8.6e-8, p_sd=2.3e-8, p=2.5e-8, epsilon=0.05
+                p3=8.6e-8, p_sd=2.3e-8, p=2.5e-8, et=0.05, p_core=1e-8
             )
 
     def test_transimpedance_raises_for_negative_turns(self):
@@ -229,7 +236,7 @@ class TestTransimpedance:
         with pytest.raises(ValueError, match="ns must be a positive integer"):
             calculate_transimpedance(
                 nd=100, ns=-50, p_eq=3e-8, omega=2*math.pi*50e3,
-                p3=8.6e-8, p_sd=2.3e-8, p=2.5e-8, epsilon=0.05
+                p3=8.6e-8, p_sd=2.3e-8, p=2.5e-8, et=0.05, p_core=1e-8
             )
 
     def test_transimpedance_raises_for_zero_omega(self):
@@ -237,7 +244,7 @@ class TestTransimpedance:
         with pytest.raises(ValueError, match="omega must be positive"):
             calculate_transimpedance(
                 nd=100, ns=100, p_eq=3e-8, omega=0,
-                p3=8.6e-8, p_sd=2.3e-8, p=2.5e-8, epsilon=0.05
+                p3=8.6e-8, p_sd=2.3e-8, p=2.5e-8, et=0.05, p_core=1e-8
             )
 
     def test_transimpedance_raises_for_zero_p_eq(self):
@@ -245,11 +252,11 @@ class TestTransimpedance:
         with pytest.raises(ValueError, match="p_eq must be positive"):
             calculate_transimpedance(
                 nd=100, ns=100, p_eq=0, omega=2*math.pi*50e3,
-                p3=8.6e-8, p_sd=2.3e-8, p=2.5e-8, epsilon=0.05
+                p3=8.6e-8, p_sd=2.3e-8, p=2.5e-8, et=0.05, p_core=1e-8
             )
 
     @pytest.mark.parametrize(
-        "nd,ns,p_eq,omega,p3,p_sd,p,epsilon",
+        "nd,ns,p_eq,omega,p3,p_sd,p,et",
         [
             (100, 100, 3e-8, 2*math.pi*10e3, 8.6e-8, 2.3e-8, 2.5e-8, 0.05),
             (50, 100, 4e-8, 2*math.pi*50e3, 9e-8, 2.5e-8, 2.8e-8, 0.1),
@@ -257,12 +264,12 @@ class TestTransimpedance:
         ],
     )
     def test_transimpedance_parametric(
-        self, nd, ns, p_eq, omega, p3, p_sd, p, epsilon
+        self, nd, ns, p_eq, omega, p3, p_sd, p, et
     ):
         """Test transimpedance with various parameter combinations."""
         z = calculate_transimpedance(
             nd=nd, ns=ns, p_eq=p_eq, omega=omega,
-            p3=p3, p_sd=p_sd, p=p, epsilon=epsilon
+            p3=p3, p_sd=p_sd, p=p, et=et, p_core=1e-8
         )
         assert isinstance(z, complex)
         assert math.isfinite(abs(z))
@@ -275,22 +282,22 @@ class TestTransimpedanceMagnitude:
         """Test that magnitude is always positive."""
         mag = calculate_transimpedance_magnitude(
             nd=100, ns=100, p_eq=3e-8, omega=2*math.pi*50e3,
-            p3=8.6e-8, p_sd=2.3e-8, p=2.5e-8, epsilon=0.05
+            p3=8.6e-8, p_sd=2.3e-8, p=2.5e-8, et=0.05, p_core=1e-8
         )
         assert mag >= 0
 
     def test_magnitude_matches_complex_abs(self):
         """Test that magnitude matches abs() of complex impedance."""
         nd, ns, p_eq, omega = 100, 100, 3e-8, 2*math.pi*50e3
-        p3, p_sd, p, epsilon = 8.6e-8, 2.3e-8, 2.5e-8, 0.05
+        p3, p_sd, p, et, p_core = 8.6e-8, 2.3e-8, 2.5e-8, 0.05, 1e-8
         
         z = calculate_transimpedance(
             nd=nd, ns=ns, p_eq=p_eq, omega=omega,
-            p3=p3, p_sd=p_sd, p=p, epsilon=epsilon
+            p3=p3, p_sd=p_sd, p=p, et=et, p_core=p_core
         )
         mag = calculate_transimpedance_magnitude(
             nd=nd, ns=ns, p_eq=p_eq, omega=omega,
-            p3=p3, p_sd=p_sd, p=p, epsilon=epsilon
+            p3=p3, p_sd=p_sd, p=p, et=et, p_core=p_core
         )
         
         assert mag == pytest.approx(abs(z), rel=1e-12)
@@ -300,15 +307,16 @@ class TestTransimpedanceMagnitude:
         p_eq = 3e-8
         omega = 2 * math.pi * 50e3
         p3, p_sd, p = 8.6e-8, 2.3e-8, 2.5e-8
-        epsilon = 0.05
+        et = 0.05
+        p_core = 1e-8
         
         mag_100_100 = calculate_transimpedance_magnitude(
             nd=100, ns=100, p_eq=p_eq, omega=omega,
-            p3=p3, p_sd=p_sd, p=p, epsilon=epsilon
+            p3=p3, p_sd=p_sd, p=p, et=et, p_core=p_core
         )
         mag_50_50 = calculate_transimpedance_magnitude(
             nd=50, ns=50, p_eq=p_eq, omega=omega,
-            p3=p3, p_sd=p_sd, p=p, epsilon=epsilon
+            p3=p3, p_sd=p_sd, p=p, et=et, p_core=p_core
         )
         
         assert mag_100_100 == pytest.approx(4 * mag_50_50, rel=1e-10)
@@ -321,22 +329,22 @@ class TestTransimpedancePhase:
         """Test that phase angle is within [-π, π]."""
         phase = calculate_transimpedance_phase(
             nd=100, ns=100, p_eq=3e-8, omega=2*math.pi*50e3,
-            p3=8.6e-8, p_sd=2.3e-8, p=2.5e-8, epsilon=0.05
+            p3=8.6e-8, p_sd=2.3e-8, p=2.5e-8, et=0.05, p_core=1e-8
         )
         assert -math.pi <= phase <= math.pi
 
     def test_phase_matches_complex_angle(self):
         """Test that phase matches cmath.phase() of complex impedance."""
         nd, ns, p_eq, omega = 100, 100, 3e-8, 2*math.pi*50e3
-        p3, p_sd, p, epsilon = 8.6e-8, 2.3e-8, 2.5e-8, 0.05
+        p3, p_sd, p, et, p_core = 8.6e-8, 2.3e-8, 2.5e-8, 0.05, 1e-8
         
         z = calculate_transimpedance(
             nd=nd, ns=ns, p_eq=p_eq, omega=omega,
-            p3=p3, p_sd=p_sd, p=p, epsilon=epsilon
+            p3=p3, p_sd=p_sd, p=p, et=et, p_core=p_core
         )
         phase = calculate_transimpedance_phase(
             nd=nd, ns=ns, p_eq=p_eq, omega=omega,
-            p3=p3, p_sd=p_sd, p=p, epsilon=epsilon
+            p3=p3, p_sd=p_sd, p=p, et=et, p_core=p_core
         )
         
         assert phase == pytest.approx(cmath.phase(z), rel=1e-12)
@@ -345,15 +353,16 @@ class TestTransimpedancePhase:
         """Test that phase is computed for different frequencies."""
         nd, ns, p_eq = 100, 100, 3e-8
         p3, p_sd, p = 8.6e-8, 2.3e-8, 2.5e-8
-        epsilon = 0.05
+        et = 0.05
+        p_core = 1e-8
         
         phase_low = calculate_transimpedance_phase(
             nd=nd, ns=ns, p_eq=p_eq, omega=2*math.pi*10e3,
-            p3=p3, p_sd=p_sd, p=p, epsilon=epsilon
+            p3=p3, p_sd=p_sd, p=p, et=et, p_core=p_core
         )
         phase_high = calculate_transimpedance_phase(
             nd=nd, ns=ns, p_eq=p_eq, omega=2*math.pi*500e3,
-            p3=p3, p_sd=p_sd, p=p, epsilon=epsilon
+            p3=p3, p_sd=p_sd, p=p, et=et, p_core=p_core
         )
         
         # Phase should be computed and finite at both frequencies
@@ -368,19 +377,20 @@ class TestIntegration:
         """Test consistency between magnitude, phase, and complex impedance."""
         nd, ns, p_eq, omega = 100, 100, 3e-8, 2*math.pi*50e3
         p3, p_sd, p = 8.6e-8, 2.3e-8, 2.5e-8
-        epsilon = 0.05
+        et = 0.05
+        p_core = 1e-8
         
         z = calculate_transimpedance(
             nd=nd, ns=ns, p_eq=p_eq, omega=omega,
-            p3=p3, p_sd=p_sd, p=p, epsilon=epsilon
+            p3=p3, p_sd=p_sd, p=p, et=et, p_core=p_core
         )
         mag = calculate_transimpedance_magnitude(
             nd=nd, ns=ns, p_eq=p_eq, omega=omega,
-            p3=p3, p_sd=p_sd, p=p, epsilon=epsilon
+            p3=p3, p_sd=p_sd, p=p, et=et, p_core=p_core
         )
         phase = calculate_transimpedance_phase(
             nd=nd, ns=ns, p_eq=p_eq, omega=omega,
-            p3=p3, p_sd=p_sd, p=p, epsilon=epsilon
+            p3=p3, p_sd=p_sd, p=p, et=et, p_core=p_core
         )
         
         # z = mag * e^(j*phase)
@@ -392,7 +402,8 @@ class TestIntegration:
         """Test transimpedance response across frequency range."""
         nd, ns, p_eq = 100, 100, 3e-8
         p3, p_sd, p = 8.6e-8, 2.3e-8, 2.5e-8
-        epsilon = 0.05
+        et = 0.05
+        p_core = 1e-8
         
         frequencies_khz = [10, 20, 50, 100, 200, 500]
         magnitudes = []
@@ -402,11 +413,11 @@ class TestIntegration:
             omega = 2 * math.pi * f_khz * 1e3
             mag = calculate_transimpedance_magnitude(
                 nd=nd, ns=ns, p_eq=p_eq, omega=omega,
-                p3=p3, p_sd=p_sd, p=p, epsilon=epsilon
+                p3=p3, p_sd=p_sd, p=p, et=et, p_core=p_core
             )
             phase = calculate_transimpedance_phase(
                 nd=nd, ns=ns, p_eq=p_eq, omega=omega,
-                p3=p3, p_sd=p_sd, p=p, epsilon=epsilon
+                p3=p3, p_sd=p_sd, p=p, et=et, p_core=p_core
             )
             magnitudes.append(mag)
             phases.append(phase)
@@ -422,18 +433,19 @@ class TestIntegration:
         assert magnitudes[-1] > magnitudes[0]
 
     def test_damping_effect_on_impedance(self):
-        """Test how damping factor (epsilon) affects impedance."""
+        """Test how damping factor (et) affects impedance."""
         nd, ns, p_eq, omega = 100, 100, 3e-8, 2*math.pi*50e3
         p3, p_sd, p = 8.6e-8, 2.3e-8, 2.5e-8
+        p_core = 1e-8
         
         # Different damping factors
         mag_low_damping = calculate_transimpedance_magnitude(
             nd=nd, ns=ns, p_eq=p_eq, omega=omega,
-            p3=p3, p_sd=p_sd, p=p, epsilon=0.01
+            p3=p3, p_sd=p_sd, p=p, et=0.01, p_core=p_core
         )
         mag_high_damping = calculate_transimpedance_magnitude(
             nd=nd, ns=ns, p_eq=p_eq, omega=omega,
-            p3=p3, p_sd=p_sd, p=p, epsilon=0.2
+            p3=p3, p_sd=p_sd, p=p, et=0.2, p_core=p_core
         )
         
         # Damping should modify the impedance

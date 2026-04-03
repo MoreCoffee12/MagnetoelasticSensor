@@ -6,11 +6,50 @@ in a four-branch magnetoelastic sensor with target eddy current coupling effects
 """
 
 
+def calculate_mutual_path_denominator(
+    p_eff: float,
+    p_core: float,
+    p_sd: float,
+) -> float:
+    """
+    Calculate the mutual magnetic path denominator.
+
+    This term appears in the combined branch expression used for mutual permeance:
+        md = 3*p_eff + 3*p_core + p_sd
+
+    Parameters
+    ----------
+    p_eff : float
+        Effective permeance [H]. Must be positive.
+    p_core : float
+        Core permeance [H]. Must be positive.
+    p_sd : float
+        Cross-leakage permeance [H]. Must be positive.
+
+    Returns
+    -------
+    float
+        Mutual path denominator md [H].
+
+    Raises
+    ------
+    ValueError
+        If any input permeance is non-positive.
+    """
+    if p_eff <= 0 or p_core <= 0 or p_sd <= 0:
+        raise ValueError(
+            f"All permeances must be positive: p_eff={p_eff}, p_core={p_core}, p_sd={p_sd}"
+        )
+
+    return 3.0 * p_eff + 3.0 * p_core + p_sd
+
+
 def calculate_normalized_impedance(
     p3: float,
     p_sd: float,
-    p: float,
-    epsilon: float,
+    p_eff: float,
+    et: float,
+    p_core: float,
 ) -> complex:
     """
     Calculate the complex normalized impedance factor accounting for eddy current effects.
@@ -19,16 +58,14 @@ def calculate_normalized_impedance(
     and sense circuits through the ferromagnetic target material. Eddy currents in the
     target dissipate energy and modify the magnetic coupling.
     
-    Formula:
-        z = (-j*P3*(Psd + 3*P) + 3*P3*P*ε + Psd*(P3 + P)*ε) 
-            / (-j*3*P3*P + 3*P*(P3 + P)*ε)
+    Formula (eqnTransImpTimeSingle in Mathematica):
+        z = (1 + p - (j*et)/((1 + q)*(x + j*et*(1 + x))))
     
     Where:
         j = complex unit (0 + 1j in Python)
-        P3 = target eddy-current permeance [H]
-        Psd = cross-leakage permeance [H]
+
         P = effective permeance (series target + air gaps) [H]
-        ε = frequency-dependent damping/loss factor [dimensionless]
+        et = target impedance phase parameter [dimensionless]
     
     Parameters
     ----------
@@ -36,11 +73,13 @@ def calculate_normalized_impedance(
         Target eddy-current permeance [H].
     p_sd : float
         Cross-leakage permeance [H].
-    p : float
+    p_eff : float
         Effective permeance [H].
-    epsilon : float
-        Frequency-dependent damping factor [dimensionless].
+    et : float
+        Target impedance phase parameter [dimensionless].
         Typically small positive value accounting for target losses.
+    p_core : float
+        Core permeance [H].
     
     Returns
     -------
@@ -50,35 +89,31 @@ def calculate_normalized_impedance(
     Raises
     ------
     ValueError
-        If any permeance is zero or epsilon is negative.
+        If any permeance is zero or et is negative.
     """
-    if p3 <= 0 or p_sd <= 0 or p <= 0:
+    if p3 <= 0 or p_sd <= 0 or p_eff <= 0 or p_core <= 0:
         raise ValueError(
-            f"All permeances must be positive: p3={p3}, p_sd={p_sd}, p={p}"
+            f"All permeances must be positive: p3={p3}, p_sd={p_sd}, p_eff={p_eff}, p_core={p_core}"
         )
     
-    if epsilon < 0:
-        raise ValueError(f"epsilon must be non-negative: epsilon={epsilon}")
+    if et < 0:
+        raise ValueError(f"et must be non-negative: et={et}")
     
-    j = complex(0, 1)  # Complex unit
+    # Complex unit
+    j = complex(0, 1)  
     
-    # Numerator: -j*P3*(Psd + 3*P) + 3*P3*P*ε + Psd*(P3 + P)*ε
-    numerator = (
-        -j * p3 * (p_sd + 3.0 * p)
-        + 3.0 * p3 * p * epsilon
-        + p_sd * (p3 + p) * epsilon
-    )
-    
-    # Denominator: -j*3*P3*P + 3*P*(P3 + P)*ε
-    denominator = (
-        -j * 3.0 * p3 * p
-        + 3.0 * p * (p3 + p) * epsilon
-    )
-    
-    if denominator == 0:
-        raise ValueError("Denominator is zero - invalid parameter combination")
-    
-    return numerator / denominator
+    # Calculate intermediate ratios, starting with the normalized permeance ratios 
+    p = p_sd / (3.0 * p_eff)  # Normalized effective permeance ratio
+    q = p_sd/(3.0 *p_core)
+
+    # Calculate the mutual permeance ratio
+    md = calculate_mutual_path_denominator(p_eff=p_eff, p_core=p_core, p_sd=p_sd)
+    pm = (3.0 * p_eff * p_core) / md
+
+    # Calculate the normalized target parameters
+    x = p3 / ( ( 1 + q) * pm )
+   
+    return (1 + p - (j*et)/((1 + q)*(x + j*et*(1 + x))))
 
 
 def calculate_transimpedance(
@@ -89,7 +124,8 @@ def calculate_transimpedance(
     p3: float,
     p_sd: float,
     p: float,
-    epsilon: float,
+    et: float,
+    p_core: float,
 ) -> complex:
     """
     Calculate the complex transimpedance (Vs/Id) of the magnetoelastic sensor.
@@ -132,6 +168,8 @@ def calculate_transimpedance(
         Effective permeance [H].
     epsilon : float
         Frequency-dependent damping factor [dimensionless].
+    p_core : float
+        Core permeance [H].
     
     Returns
     -------
@@ -171,7 +209,8 @@ def calculate_transimpedance(
         p3=p3,
         p_sd=p_sd,
         p=p,
-        epsilon=epsilon,
+        et=et,
+        p_core=p_core,
     )
     
     # Calculate transimpedance: Vs/Id = j * Nd * Ns * P_eq * ω * z
@@ -188,7 +227,8 @@ def calculate_transimpedance_magnitude(
     p3: float,
     p_sd: float,
     p: float,
-    epsilon: float,
+    et: float,
+    p_core: float,
 ) -> float:
     """
     Calculate the magnitude of the complex transimpedance.
@@ -212,8 +252,10 @@ def calculate_transimpedance_magnitude(
         Cross-leakage permeance [H].
     p : float
         Effective permeance [H].
-    epsilon : float
-        Frequency-dependent damping factor [dimensionless].
+    et : float
+        Target impedance phase parameter [dimensionless].
+    p_core : float
+        Core permeance [H].
     
     Returns
     -------
@@ -228,7 +270,8 @@ def calculate_transimpedance_magnitude(
         p3=p3,
         p_sd=p_sd,
         p=p,
-        epsilon=epsilon,
+        et=et,
+        p_core=p_core,
     )
     
     return abs(impedance)
@@ -242,7 +285,8 @@ def calculate_transimpedance_phase(
     p3: float,
     p_sd: float,
     p: float,
-    epsilon: float,
+    et: float,
+    p_core: float,
 ) -> float:
     """
     Calculate the phase angle of the complex transimpedance.
@@ -266,8 +310,10 @@ def calculate_transimpedance_phase(
         Cross-leakage permeance [H].
     p : float
         Effective permeance [H].
-    epsilon : float
-        Frequency-dependent damping factor [dimensionless].
+    et : float
+        Target impedance phase parameter [dimensionless].
+    p_core : float
+        Core permeance [H].
     
     Returns
     -------
@@ -284,7 +330,8 @@ def calculate_transimpedance_phase(
         p3=p3,
         p_sd=p_sd,
         p=p,
-        epsilon=epsilon,
+        et=et,
+        p_core=p_core,
     )
     
     return cmath.phase(impedance)
