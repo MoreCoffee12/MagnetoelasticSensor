@@ -55,7 +55,7 @@ class TestSensorGeometry:
         assert geom.dim_sph_sense.nominal == pytest.approx(15.0e-3)
         
         # Bridge
-        assert geom.dim_spaw.nominal == pytest.approx(4.50e-3)
+        assert geom.awi.nominal == pytest.approx(4.50e-3)
         assert geom.dim_spah.nominal == pytest.approx(4.25e-3)
         assert geom.dim_spac.nominal == pytest.approx(16.0e-3)
         
@@ -79,7 +79,7 @@ class TestSensorGeometry:
             dim_sph_sense=DimensionalParameter(nominal=16e-3, tolerance=0.1e-3),
             ndrive=DimensionalParameter(nominal=800.0, tolerance=0.0),
             nsense=DimensionalParameter(nominal=60.0, tolerance=0.0),
-            dim_spaw=DimensionalParameter(nominal=5e-3, tolerance=0.1e-3),
+            awi=DimensionalParameter(nominal=5e-3, tolerance=0.1e-3),
             dim_spah=DimensionalParameter(nominal=5e-3, tolerance=0.1e-3),
             dim_spac=DimensionalParameter(nominal=17e-3, tolerance=0.1e-3),
             dim_spag=DimensionalParameter(nominal=10e-3, tolerance=0.1e-3),
@@ -125,7 +125,7 @@ class TestCorePermeanceModel:
             dim_sph_sense=DimensionalParameter(nominal=16e-3, tolerance=0.1e-3),
             ndrive=DimensionalParameter(nominal=800.0, tolerance=0.0),
             nsense=DimensionalParameter(nominal=60.0, tolerance=0.0),
-            dim_spaw=DimensionalParameter(nominal=5e-3, tolerance=0.1e-3),
+            awi=DimensionalParameter(nominal=5e-3, tolerance=0.1e-3),
             dim_spah=DimensionalParameter(nominal=5e-3, tolerance=0.1e-3),
             dim_spac=DimensionalParameter(nominal=17e-3, tolerance=0.1e-3),
             dim_spag=DimensionalParameter(nominal=10e-3, tolerance=0.1e-3),
@@ -171,7 +171,7 @@ class TestCorePermeanceFunctional:
             dim_sph_sense=DimensionalParameter(nominal=16e-3, tolerance=0.1e-3),
             ndrive=DimensionalParameter(nominal=800.0, tolerance=0.0),
             nsense=DimensionalParameter(nominal=60.0, tolerance=0.0),
-            dim_spaw=DimensionalParameter(nominal=5e-3, tolerance=0.1e-3),
+            awi=DimensionalParameter(nominal=5e-3, tolerance=0.1e-3),
             dim_spah=DimensionalParameter(nominal=5e-3, tolerance=0.1e-3),
             dim_spac=DimensionalParameter(nominal=17e-3, tolerance=0.1e-3),
             dim_spag=DimensionalParameter(nominal=10e-3, tolerance=0.1e-3),

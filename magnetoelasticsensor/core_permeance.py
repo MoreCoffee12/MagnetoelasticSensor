@@ -75,8 +75,8 @@ class CorePermeanceModel:
         dimsphi = self.geometry.dim_sph_drive.nominal
         sp = self.geometry.dim_sp.nominal
         dimsphi = self.geometry.dim_sph_sense.nominal
-        dimspawi = self.geometry.dim_spaw.nominal
-        dimspahi = self.geometry.dim_spah.nominal
+        dimspawi = self.geometry.awi.nominal
+        sphi = self.geometry.dim_spah.nominal
         dimspaci = self.geometry.dim_spac.nominal
         spag = self.geometry.dim_spag.nominal
 
@@ -89,7 +89,7 @@ class CorePermeanceModel:
         # permeance as a function of geometry and material properties
 
         # Branch permeance (magnetic path through core)
-        Pbr = (dimspahi * dimspawi * muo * mur) / dimspaci
+        Pbr = (sphi * dimspawi * muo * mur) / dimspaci
         assert Pbr > 0, "Branch permeance must be greater than zero."
         Pbreddy = (16 * math.pi * rho) / (dimspaci * omega)
         assert Pbreddy > 0, "Branch eddy current permeance must be greater than zero."

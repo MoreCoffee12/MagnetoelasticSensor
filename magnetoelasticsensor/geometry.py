@@ -67,7 +67,7 @@ class SensorGeometry:
     nsense: DimensionalParameter  # Number of turns on sense coil [dimensionless]
     
     # Bridge / Pole arm (ferrite structure connecting poles)
-    dim_spaw: DimensionalParameter  # Rectangular Bridge width [m]
+    awi: DimensionalParameter  # Rectangular Bridge width [m]
     dim_spah: DimensionalParameter  # Rectangular Bridge height [m]
     dim_spac: DimensionalParameter  # Bridge length (distance between pole centers)
 
@@ -97,7 +97,7 @@ class SensorGeometry:
             f"SensorGeometry(\n"
             f"  Drive pole:     ∅ {self.dim_dp.nominal*1e3:.2f}mm × H {self.dim_sph_drive.nominal*1e3:.2f}mm\n"
             f"  Sense pole:     ∅ {self.dim_sp.nominal*1e3:.2f}mm × H {self.dim_sph_sense.nominal*1e3:.2f}mm\n"
-            f"  Bridge (arm):   W {self.dim_spaw.nominal*1e3:.2f}mm × H {self.dim_spah.nominal*1e3:.2f}mm × L {self.dim_spac.nominal*1e3:.2f}mm\n"
+            f"  Bridge (arm):   W {self.awi.nominal*1e3:.2f}mm × H {self.dim_spah.nominal*1e3:.2f}mm × L {self.dim_spac.nominal*1e3:.2f}mm\n"
             f"  Pole gap:       {self.dim_spag.nominal*1e3:.2f}mm\n"
             f")"
         )
@@ -137,7 +137,7 @@ DEFAULT_SENSOR_GEOMETRY = SensorGeometry(
     ),
     
     # Bridge/pole arm: width 4.50mm ± 0.08mm, height 4.25mm ± 0.08mm, length 16.0mm ± 0.08mm
-    dim_spaw=DimensionalParameter(
+    awi=DimensionalParameter(
         nominal=4.50e-3,
         tolerance=0.08e-3
     ),

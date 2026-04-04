@@ -98,8 +98,8 @@ class CrossLeakagePermeanceModel:
         muo = self.geometry.muo.nominal if muo is None else muo
         
         # Extract core geometry (nominal values)
-        dim_spaw = self.geometry.dim_spaw.nominal  # Bridge width [m]
-        dimspahi = self.geometry.dim_spah.nominal  # Pole overall height [m]
+        awi = self.geometry.awi.nominal  # Sense pole are width [m]
+        sphi = self.geometry.dim_spah.nominal  # Pole overall height [m]
         dim_spac = self.geometry.dim_spac.nominal  # Pole-to-pole spacing [m]
         dimdp = self.geometry.dim_dp.nominal  # Drive pole diameter [m]
         dimspagi = self.geometry.dim_spag.nominal  # Pole gap [m] 
@@ -109,8 +109,8 @@ class CrossLeakagePermeanceModel:
         
         # Basic sanity checks
         assert muo > 0, "Vacuum permeability must be greater than zero."
-        assert dim_spaw > 0, "Bridge width must be greater than zero."
-        assert dimspahi > 0, "Bridge height must be greater than zero."
+        assert awi > 0, "Bridge width must be greater than zero."
+        assert sphi > 0, "Bridge height must be greater than zero."
         assert dim_spac > 0, "Pole spacing must be greater than zero."
         
         # Calculate g2 parameter for fringing field calculations
@@ -122,7 +122,7 @@ class CrossLeakagePermeanceModel:
         
         # Calculate cross-leaking permeance following Fleming's method
         # using the utility function from permeance module
-        permeance = (2*(-dimspahi + dimsphi - g2)*muo*math.pi)/math.log(u + math.sqrt(-1 + math.pow(u,2)))
+        permeance = (2*(-sphi + dimsphi - g2)*muo*math.pi)/math.log(u + math.sqrt(-1 + math.pow(u,2)))
         
         return permeance
 
