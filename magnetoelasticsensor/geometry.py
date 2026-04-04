@@ -69,7 +69,7 @@ class SensorGeometry:
     # Bridge / Pole arm (ferrite structure connecting poles)
     awi: DimensionalParameter  # Rectangular Bridge width [m]
     dim_spah: DimensionalParameter  # Rectangular Bridge height [m]
-    dim_spac: DimensionalParameter  # Bridge length (distance between pole centers)
+    drspi: DimensionalParameter  # Bridge length (distance between pole centers)
 
     # Core magnetic properties (not geometric but included for completeness)
     muo: DimensionalParameter  # Permeability of free space [H/m]
@@ -97,7 +97,7 @@ class SensorGeometry:
             f"SensorGeometry(\n"
             f"  Drive pole:     ∅ {self.dim_dp.nominal*1e3:.2f}mm × H {self.dim_sph_drive.nominal*1e3:.2f}mm\n"
             f"  Sense pole:     ∅ {self.dim_sp.nominal*1e3:.2f}mm × H {self.dim_sph_sense.nominal*1e3:.2f}mm\n"
-            f"  Bridge (arm):   W {self.awi.nominal*1e3:.2f}mm × H {self.dim_spah.nominal*1e3:.2f}mm × L {self.dim_spac.nominal*1e3:.2f}mm\n"
+            f"  Bridge (arm):   W {self.awi.nominal*1e3:.2f}mm × H {self.dim_spah.nominal*1e3:.2f}mm × L {self.drspi.nominal*1e3:.2f}mm\n"
             f"  Pole gap:       {self.dim_spag.nominal*1e3:.2f}mm\n"
             f")"
         )
@@ -145,7 +145,7 @@ DEFAULT_SENSOR_GEOMETRY = SensorGeometry(
         nominal=4.25e-3,
         tolerance=0.08e-3
     ),
-    dim_spac=DimensionalParameter(
+    drspi=DimensionalParameter(
         nominal=16.0e-3,
         tolerance=0.08e-3
     ),

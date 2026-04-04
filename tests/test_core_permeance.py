@@ -57,7 +57,7 @@ class TestSensorGeometry:
         # Bridge
         assert geom.awi.nominal == pytest.approx(4.50e-3)
         assert geom.dim_spah.nominal == pytest.approx(4.25e-3)
-        assert geom.dim_spac.nominal == pytest.approx(16.0e-3)
+        assert geom.drspi.nominal == pytest.approx(16.0e-3)
         
         # Gap
         assert geom.dim_spag.nominal == pytest.approx(9.00e-3)
@@ -81,7 +81,7 @@ class TestSensorGeometry:
             nsense=DimensionalParameter(nominal=60.0, tolerance=0.0),
             awi=DimensionalParameter(nominal=5e-3, tolerance=0.1e-3),
             dim_spah=DimensionalParameter(nominal=5e-3, tolerance=0.1e-3),
-            dim_spac=DimensionalParameter(nominal=17e-3, tolerance=0.1e-3),
+            drspi=DimensionalParameter(nominal=17e-3, tolerance=0.1e-3),
             dim_spag=DimensionalParameter(nominal=10e-3, tolerance=0.1e-3),
             muo=DimensionalParameter(nominal=4e-7*math.pi, tolerance=0.0),
             mur=DimensionalParameter(nominal=2000.0, tolerance=0.0),
@@ -127,7 +127,7 @@ class TestCorePermeanceModel:
             nsense=DimensionalParameter(nominal=60.0, tolerance=0.0),
             awi=DimensionalParameter(nominal=5e-3, tolerance=0.1e-3),
             dim_spah=DimensionalParameter(nominal=5e-3, tolerance=0.1e-3),
-            dim_spac=DimensionalParameter(nominal=17e-3, tolerance=0.1e-3),
+            drspi=DimensionalParameter(nominal=17e-3, tolerance=0.1e-3),
             dim_spag=DimensionalParameter(nominal=10e-3, tolerance=0.1e-3),
             muo=DimensionalParameter(nominal=4e-7*math.pi, tolerance=0.0),
             mur=DimensionalParameter(nominal=2000.0, tolerance=0.0),
@@ -173,7 +173,7 @@ class TestCorePermeanceFunctional:
             nsense=DimensionalParameter(nominal=60.0, tolerance=0.0),
             awi=DimensionalParameter(nominal=5e-3, tolerance=0.1e-3),
             dim_spah=DimensionalParameter(nominal=5e-3, tolerance=0.1e-3),
-            dim_spac=DimensionalParameter(nominal=17e-3, tolerance=0.1e-3),
+            drspi=DimensionalParameter(nominal=17e-3, tolerance=0.1e-3),
             dim_spag=DimensionalParameter(nominal=10e-3, tolerance=0.1e-3),
             muo=DimensionalParameter(nominal=4e-7*math.pi, tolerance=0.0),
             mur=DimensionalParameter(nominal=2000.0, tolerance=0.0),

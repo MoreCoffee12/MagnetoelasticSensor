@@ -100,7 +100,7 @@ class CrossLeakagePermeanceModel:
         # Extract core geometry (nominal values)
         awi = self.geometry.awi.nominal  # Sense pole are width [m]
         sphi = self.geometry.dim_spah.nominal  # Pole overall height [m]
-        dim_spac = self.geometry.dim_spac.nominal  # Pole-to-pole spacing [m]
+        drspi = self.geometry.drspi.nominal  # Pole-to-pole spacing [m]
         dimdp = self.geometry.dim_dp.nominal  # Drive pole diameter [m]
         dimspagi = self.geometry.dim_spag.nominal  # Pole gap [m] 
         dimspi = self.geometry.dim_sp.nominal  # Sense pole diameter [m]
@@ -111,7 +111,7 @@ class CrossLeakagePermeanceModel:
         assert muo > 0, "Vacuum permeability must be greater than zero."
         assert awi > 0, "Bridge width must be greater than zero."
         assert sphi > 0, "Bridge height must be greater than zero."
-        assert dim_spac > 0, "Pole spacing must be greater than zero."
+        assert drspi > 0, "Pole spacing must be greater than zero."
         
         # Calculate g2 parameter for fringing field calculations
         # Note: For cross-leakage, we use the pole spacing (dim_spag) and 

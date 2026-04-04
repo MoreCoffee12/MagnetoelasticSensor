@@ -77,7 +77,7 @@ class CorePermeanceModel:
         dimsphi = self.geometry.dim_sph_sense.nominal
         dimspawi = self.geometry.awi.nominal
         sphi = self.geometry.dim_spah.nominal
-        dimspaci = self.geometry.dim_spac.nominal
+        dimspaci = self.geometry.drspi.nominal
         spag = self.geometry.dim_spag.nominal
 
         muo = self.geometry.muo.nominal if muo is None else muo
