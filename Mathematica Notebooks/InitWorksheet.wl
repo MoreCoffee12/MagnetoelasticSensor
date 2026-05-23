@@ -1,5 +1,8 @@
 (* ::Package:: *)
 
+\[AliasDelimiter]
+
+
 (* ::Package:: *)
 (**)
 
@@ -8,7 +11,8 @@
 
 BeginPackage["MyUtilities`InitWorksheet`"]
 
-ClearAll[PrintAreaMomentOfInertia, Iprint, 
+ClearAll[PrintAreaMomentOfInertia, Iprint,
+  PrintMassMomentOfInertia, MIprint,
   PrintLength, hprint, wprint, tprint, 
   PrintAccel, accprint, 
   PrintArea, aprint,
@@ -16,6 +20,7 @@ ClearAll[PrintAreaMomentOfInertia, Iprint,
   PrintMagFluxDensity, fdprint,
   PrintMass, maprint, 
   PrintPress, pprint,
+  PrintStress, stprint, stressprint,
   PrintPressSlope, slprint,
   PrintCap, caprint,
   PrintTemp, tmprint,
@@ -27,10 +32,16 @@ ClearAll[PrintAreaMomentOfInertia, Iprint,
   PrintResistanceLength, rlprint,
   PrintAngle, angprint,
   PrintCoords, cdprint,
-  PrintPhasor, phprint]
+  PrintPhasor, phprint,
+  PrintTorque, tqprint,
+  PrintTorsStiff, printTorsStiff,
+  ExtractStateSpaceBlocks, ssblocks]
 
 PrintAreaMomentOfInertia::usage = "PrintAreaMomentOfInertia[inertia, opts] prints the area moment of inertia in mm\:2074 (in\:2074) or reverse."
 Iprint::usage = "Shorthand for PrintAreaMomentOfInertia."
+
+PrintMassMomentOfInertia::usage = "PrintMassMomentOfInertia[inertia, opts] prints the mass moment of inertia in kg-m^2 (lb-in^2) or lb-in^2 (kg-m^2)."
+MIprint::usage = "Shorthand for PrintMassMomentOfInertia."
 
 PrintLength::usage = "PrintLength[length, opts] prints a linear dimension in mm (in) or in (mm)."
 hprint::usage = "Shorthand for PrintLength (height)."
@@ -45,6 +56,10 @@ aprint::usage = "Shorthand for PrintArea."
 
 PrintPress::usage = "PrintPress[press, opts] prints pressure in kilopascals (psi) or psi (kilopascals)."
 pprint::usage = "Shorthand for PrintPress."
+
+PrintStress::usage = "PrintStress[stress, opts] prints stress in megapascals (psi, bars) or psi (megapascals, bars)."
+stprint::usage = "Shorthand for PrintStress."
+stressprint::usage = "Shorthand for PrintStress."
 
 PrintPressSlope::usage = "PrintPressSlope[length, opts] prints transducer sensitivity slope in bar/mV (psi/mV, kgf/\!\(\*SuperscriptBox[\(cm\), \(2\)]\)/mV) or psi/mV (bar/mV, kgf/\!\(\*SuperscriptBox[\(cm\), \(2\)]\)/mV)."
 slprint::usage = "Shorthand for PrintPressSlope."
@@ -106,6 +121,22 @@ cdprint::usage = "Shorthand for PrintCoords."
 PrintPhasor::usage = "Prints complex values or complex quantities in phasor form."
 phprint::usage = "Shorthand for PrintPhasor" 
 
+PrintTorque::usage = "PrintTorque[torque, opts] prints torque in newtons-meter (lbf-in) or lbf-in (newtons-meter)."
+tqprint::usage = "Shorthand for PrintTorque" 
+
+PrintTorsStiff::usage = "PrintTorsStiff[k, opts] prints torsional stiffness in newton-meters/radian (lbf-in/degree) or lbf-in/degree (newton-meters/radian)."
+printTorsStiff::usage = "Shorthand for PrintTorsStiff"
+
+
+(* State-Space Functions *)
+ExtractStateSpaceBlocks::usage =
+  "ExtractStateSpaceBlocks[A] extracts the four equal-sized block \
+submatrices from a square, even-dimensional state-space matrix A. \
+It returns an Association with keys \"A11\", \"A12\", \"A21\", and \
+\"A22\".";
+ssblocks::usage =
+  "ssblocks[A] is shorthand for ExtractStateSpaceBlocks[A].";
+
 Begin["`Private`"]
 
 (* Acceleration *)
@@ -126,23 +157,77 @@ PrintAccel[Accel_?QuantityQ, OptionsPattern[]] := Module[{
 
 accprint = PrintAccel;
 
-(* Moment of inertia *)
+(* Area Moment of inertia *)
 InertiaToMillimeters\:2074[i_?QuantityQ] := UnitConvert[i, ("Millimeters")^4]
 InertiaToInches\:2074[i_?QuantityQ]      := UnitConvert[i, ("Inches")^4]
 
 FormatInertiaValue[v_?QuantityQ, prec_:6] := NumberForm[N[v], prec]
 
-Options[PrintAreaMomentOfInertia] = {"Label" -> "Area Moment of Inertia", "Precision" -> 6, "SIUnitFirst" -> True};
+Options[PrintAreaMomentOfInertia] = {
+	"Label" -> "Area Moment of Inertia",
+	"Precision" -> 9,
+	"SIUnitFirst" -> True,
+	"LabelWidth" -> 200
+   };
 PrintAreaMomentOfInertia[inertia_?QuantityQ, OptionsPattern[]] := Module[{
     mm4 = InertiaToMillimeters\:2074[inertia], in4 = InertiaToInches\:2074[inertia]},
-   Print[StringPadLeft[OptionValue["Label"] <> ": ", 28],
+   
+  label = OptionValue["Label"];
+	
+  valueRow =
     If[TrueQ[OptionValue["SIUnitFirst"]],
-     Row[{FormatInertiaValue[mm4, OptionValue["Precision"]], " (", FormatInertiaValue[in4, OptionValue["Precision"]], ")"}],
-     Row[{FormatInertiaValue[in4, OptionValue["Precision"]], " (", FormatInertiaValue[mm4, OptionValue["Precision"]], ")"}]
-    ]]
+      Row[{FormatPermValue[mm4, OptionValue["Precision"]],
+           " (", FormatPermValue[in4, OptionValue["Precision"]], ")"}],
+      Row[{FormatPermValue[in4, OptionValue["Precision"]],
+           " (", FormatPermValue[mm4, OptionValue["Precision"]], ")"}]
+    ];
+  Print @ Row[{
+    Pane[
+      Row[{label, ": "}],
+      Alignment -> Right,
+      ImageSize -> {OptionValue["LabelWidth"], Automatic}
+    ],
+    valueRow
+  }];    
 ]
 
 Iprint = PrintAreaMomentOfInertia;
+
+(* Mass Moment of inertia *)
+MassInertiaToSI[i_?QuantityQ] := UnitConvert[i, ("Kilograms")*("Meters")^2]
+MassInertiaToUSCS[i_?QuantityQ] := UnitConvert[i, ("PoundsForce")*("Inches")*("Seconds")^2]
+
+FormatMassInertiaValue[v_?QuantityQ, prec_:6] := NumberForm[N[v], prec]
+
+Options[PrintMassMomentOfInertia] = {
+	"Label" -> "Mass Moment of Inertia",
+	"Precision" -> 9,
+	"SIUnitFirst" -> True,
+	"LabelWidth" -> 200
+   };
+PrintMassMomentOfInertia[inertia_?QuantityQ, OptionsPattern[]] := Module[{
+    si = MassInertiaToSI[inertia], uscs = MassInertiaToUSCS[inertia]},
+
+  label = OptionValue["Label"];
+
+  valueRow =
+    If[TrueQ[OptionValue["SIUnitFirst"]],
+      Row[{FormatMassInertiaValue[si, OptionValue["Precision"]],
+           " (", FormatMassInertiaValue[uscs, OptionValue["Precision"]], ")"}],
+      Row[{FormatMassInertiaValue[uscs, OptionValue["Precision"]],
+           " (", FormatMassInertiaValue[si, OptionValue["Precision"]], ")"}]
+    ];
+  Print @ Row[{
+    Pane[
+      Row[{label, ": "}],
+      Alignment -> Right,
+      ImageSize -> {OptionValue["LabelWidth"], Automatic}
+    ],
+    valueRow
+  }];
+]
+
+MIprint = PrintMassMomentOfInertia;
 
 (* Linear dimensions *)
 ToMillimeters[l_?QuantityQ] := UnitConvert[l, "Millimeters"]
@@ -246,6 +331,53 @@ PrintPress[Press_?QuantityQ, OptionsPattern[]] := Module[
 ];
 
 pprint = PrintPress;
+
+(* Stress *)
+StressToMegapascals[s_?QuantityQ] := UnitConvert[s, "Megapascals"]
+StressToPSI[s_?QuantityQ] := UnitConvert[s, "PoundsForce"/("Inches" * "Inches")]
+StressToBars[s_?QuantityQ] := UnitConvert[s, "Bars"]
+
+FormatStressValue[v_?QuantityQ, prec_:3] := NumberForm[N[v], prec]
+
+Options[PrintStress] = {
+  "Label" -> "Stress", 
+  "Precision" -> 9, 
+  "SIUnitFirst" -> True,
+  "LabelWidth" -> 200};
+
+PrintStress[Stress_?QuantityQ, OptionsPattern[]] := Module[
+  {
+    stressmpa = StressToMegapascals[Stress],
+    stresspsi = StressToPSI[Stress],
+    stressbar = StressToBars[Stress]
+    },
+
+  label = OptionValue["Label"];
+
+  valueRow =
+    If[TrueQ[OptionValue["SIUnitFirst"]],
+      Row[{
+        FormatStressValue[stressmpa, OptionValue["Precision"]],
+        " (", FormatStressValue[stresspsi, OptionValue["Precision"]], ", ", FormatStressValue[stressbar, OptionValue["Precision"]], ")"
+      }],
+      Row[{
+        FormatStressValue[stresspsi, OptionValue["Precision"]],
+        " (", FormatStressValue[stressmpa, OptionValue["Precision"]], ", ", FormatStressValue[stressbar, OptionValue["Precision"]], ")"
+      }]
+    ];
+
+  Print @ Row[{
+    Pane[
+      Row[{label, ": "}],
+      Alignment -> Right,
+      ImageSize -> {OptionValue["LabelWidth"], Automatic}
+    ],
+    valueRow
+  }];
+];
+
+stprint = PrintStress;
+stressprint = PrintStress;
 
 (* Pressure Slope *)
 PressureSlopeToKilopascals[p_?QuantityQ] := UnitConvert[p, "Kilopascals"/"Millivolts"]
@@ -785,6 +917,79 @@ PrintAngle[theta_ /; (NumericQ[theta] || QuantityQ[theta]), OptionsPattern[]] :=
     }];
 ];
 
+
+(* Torque dimensions *)
+ToNm[l_?QuantityQ] := UnitConvert[l, "Meters"*"Newtons"]
+ToLbfIn[l_?QuantityQ]      := UnitConvert[l, "Inches"*"PoundsForce"]
+
+FormatTorqueValue[v_?QuantityQ, prec_:3] := NumberForm[N[v], prec]
+
+Options[PrintTorque] = {"Label" -> "Torque", 
+	"Precision" -> 9, 
+	"SIUnitFirst" -> True,
+	"LabelWidth" -> 200};
+	
+PrintTorque[Torque_?QuantityQ, OptionsPattern[]] := Module[
+  {tqSI = ToNm[Torque], tqUSCS = ToLbfIn[Torque]},
+	
+  label = OptionValue["Label"];
+	
+  valueRow =
+    If[TrueQ[OptionValue["SIUnitFirst"]],
+      Row[{FormatTorqueValue[tqSI, OptionValue["Precision"]],
+           " (", FormatTorqueValue[tqUSCS, OptionValue["Precision"]], ")"}],
+      Row[{FormatTorqueValue[tqUSCS, OptionValue["Precision"]],
+           " (", FormatTorqueValue[tqSI, OptionValue["Precision"]], ")"}]
+    ];
+  Print @ Row[{
+    Pane[
+      Row[{label, ": "}],
+      Alignment -> Right,
+      ImageSize -> {OptionValue["LabelWidth"], Automatic}
+    ],
+    valueRow
+  }];
+  
+];
+
+tqprint = PrintTorque;
+
+(* Torsional stiffness dimensions *)
+ToTorsStiffSI[k_?QuantityQ] := UnitConvert[k, ("Meters"*"Newtons")]
+ToTorsStiffUSCS[k_?QuantityQ] := UnitConvert[k, ("Inches"*"PoundsForce")]
+
+FormatTorsStiffValue[v_?QuantityQ, prec_:3] := NumberForm[N[v], prec]
+
+Options[PrintTorsStiff] = {"Label" -> "Torsional stiffness",
+	"Precision" -> 9,
+	"SIUnitFirst" -> True,
+	"LabelWidth" -> 200};
+
+PrintTorsStiff[TorsStiff_?QuantityQ, OptionsPattern[]] := Module[
+  {kSI = ToTorsStiffSI[TorsStiff], kUSCS = ToTorsStiffUSCS[TorsStiff]},
+
+  label = OptionValue["Label"];
+
+  valueRow =
+    If[TrueQ[OptionValue["SIUnitFirst"]],
+      Row[{FormatTorsStiffValue[kSI, OptionValue["Precision"]],
+           " (", FormatTorsStiffValue[kUSCS, OptionValue["Precision"]], ")"}],
+      Row[{FormatTorsStiffValue[kUSCS, OptionValue["Precision"]],
+           " (", FormatTorsStiffValue[kSI, OptionValue["Precision"]], ")"}]
+    ];
+  Print @ Row[{
+    Pane[
+      Row[{label, ": "}],
+      Alignment -> Right,
+      ImageSize -> {OptionValue["LabelWidth"], Automatic}
+    ],
+    valueRow
+  }];
+
+];
+
+printTorsStiff = PrintTorsStiff;
+
 (* Complex Coordinates *)
 ComplexToMillimeters[l_?QuantityQ] := UnitConvert[l, "Millimeters"]
 ComplexToInches[l_?QuantityQ]      := UnitConvert[l, "Inches"]
@@ -826,7 +1031,7 @@ cdprint = PrintCoords;
 phasorAngleBoxes[fmt_]:=MakeBoxes[Style["\[Angle]",18,Bold],fmt];
 
 (*Helper:numeric angle in degrees,rounded for display*)
-phasorAngleDeg[z_Complex]:=NumberForm[Round[N[Arg[z]*180./Pi],0.1],{4,1}];
+phasorAngleDeg[z_Complex]:=NumberForm[Round[N[Arg[z]*180./Pi],0.01],{5,1}];
 
 (*----Plain Complex----*)
 PrintPhasor/:MakeBoxes[PrintPhasor[z_Complex],fmt_:StandardForm]:=With[{mag=Abs[z],ang=phasorAngleDeg[z],angSym=phasorAngleBoxes[fmt]},RowBox[{MakeBoxes[mag,fmt]," ",angSym," ",MakeBoxes[ang,fmt],"\[Degree]"}]];
@@ -839,6 +1044,55 @@ PrintPhasor/:MakeBoxes[PrintPhasor[mag_?QuantityQ,ang_?QuantityQ],fmt_:StandardF
 
 (*Convenience:phasor[magNumber,"Ohms",angleQuantity]*)
 PrintPhasor/:MakeBoxes[PrintPhasor[mag_?NumericQ,unit_,ang_?QuantityQ],fmt_:StandardForm]:=MakeBoxes[phasor[Quantity[mag,unit],ang],fmt];
+
+(* Extract Four elements of the A matrix for a mechanical system *)
+ExtractStateSpaceBlocks::nonsquare =
+  "Input matrix must be square. Dimensions are `1`.";
+
+ExtractStateSpaceBlocks::oddsize =
+  "Input matrix must have even dimension. Dimensions are `1`.";
+
+ExtractStateSpaceBlocks::badinput =
+  "Input must be a matrix. Got: `1`.";
+
+ExtractStateSpaceBlocks[A_?MatrixQ] := Module[
+  {dims, nRows, nCols, nHalf},
+
+  dims = Dimensions[A];
+
+  If[Length[dims] != 2,
+    Message[ExtractStateSpaceBlocks::badinput, HoldForm[A]];
+    Return[$Failed];
+  ];
+
+  {nRows, nCols} = dims;
+
+  If[nRows =!= nCols,
+    Message[ExtractStateSpaceBlocks::nonsquare, dims];
+    Return[$Failed];
+  ];
+
+  If[OddQ[nRows],
+    Message[ExtractStateSpaceBlocks::oddsize, dims];
+    Return[$Failed];
+  ];
+
+  nHalf = Quotient[nRows, 2];
+
+  <|
+    "A11" -> A[[1 ;; nHalf, 1 ;; nHalf]],
+    "A12" -> A[[1 ;; nHalf, nHalf + 1 ;; nRows]],
+    "A21" -> A[[nHalf + 1 ;; nRows, 1 ;; nHalf]],
+    "A22" -> A[[nHalf + 1 ;; nRows, nHalf + 1 ;; nRows]]
+  |>
+];
+
+ExtractStateSpaceBlocks[A_] := Module[{},
+  Message[ExtractStateSpaceBlocks::badinput, HoldForm[A]];
+  $Failed
+];
+
+ssblocks[A_] := ExtractStateSpaceBlocks[A];
 
 End[]
 EndPackage[]
